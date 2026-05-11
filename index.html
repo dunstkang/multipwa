@@ -472,6 +472,69 @@ body {
   📲 加入主畫面
 </button>
 
+<!-- 安裝提示框（iOS / 不支援平台） -->
+<div id="install-modal" style="
+  display:none; position:fixed; inset:0; z-index:1100;
+  background:rgba(0,0,0,0.65); backdrop-filter:blur(6px);
+  align-items:flex-end; justify-content:center; padding:0 0 32px;
+" onclick="if(event.target===this)closeInstallModal()">
+  <div style="
+    background:#1d2d40; border:1px solid #2a4a6a;
+    border-radius:20px 20px 16px 16px;
+    padding:28px 24px 24px; width:100%; max-width:480px;
+    position:relative;
+  ">
+    <button onclick="closeInstallModal()" style="
+      position:absolute; top:14px; right:16px;
+      background:none; border:none; color:#6a88a8;
+      font-size:1.4rem; cursor:pointer; line-height:1;
+    ">✕</button>
+
+    <div style="font-family:'Bebas Neue',cursive;font-size:1.5rem;letter-spacing:3px;color:#a78bfa;margin-bottom:4px">
+      📲 加入主畫面
+    </div>
+    <div style="font-size:0.8rem;color:#6a88a8;margin-bottom:20px">Add to Home Screen</div>
+
+    <!-- iOS Safari -->
+    <div id="modal-ios" style="display:none">
+      <div style="background:#0f1923;border-radius:10px;padding:16px;margin-bottom:12px">
+        <div style="font-size:0.85rem;color:#e8f0f8;line-height:1.8">
+          <div style="margin-bottom:8px;font-weight:700;color:#a78bfa">iPhone / iPad（Safari）</div>
+          <div>① 點底部工具列的 <span style="background:#2a4a6a;padding:2px 8px;border-radius:4px">分享 ⬆</span> 按鈕</div>
+          <div>② 選擇 <span style="background:#2a4a6a;padding:2px 8px;border-radius:4px">加入主畫面 ＋</span></div>
+          <div>③ 點右上角 <span style="background:#2a4a6a;padding:2px 8px;border-radius:4px">新增</span> 確認</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- macOS Safari -->
+    <div id="modal-mac-safari" style="display:none">
+      <div style="background:#0f1923;border-radius:10px;padding:16px;margin-bottom:12px">
+        <div style="font-size:0.85rem;color:#e8f0f8;line-height:1.8">
+          <div style="margin-bottom:8px;font-weight:700;color:#a78bfa">Mac（Safari）</div>
+          <div>① 上方選單列點 <span style="background:#2a4a6a;padding:2px 8px;border-radius:4px">檔案</span></div>
+          <div>② 選擇 <span style="background:#2a4a6a;padding:2px 8px;border-radius:4px">加入 Dock</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Firefox / 其他 -->
+    <div id="modal-other" style="display:none">
+      <div style="background:#0f1923;border-radius:10px;padding:16px;margin-bottom:12px">
+        <div style="font-size:0.85rem;color:#e8f0f8;line-height:1.8">
+          <div style="margin-bottom:8px;font-weight:700;color:#a78bfa">建議改用 Chrome 或 Edge</div>
+          <div>此瀏覽器不支援安裝 PWA。</div>
+          <div style="margin-top:6px">請用 <span style="color:#00d4ff">Chrome</span> 或 <span style="color:#00d4ff">Edge</span> 開啟此頁，再點「加入主畫面」。</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size:0.75rem;color:#6a88a8;text-align:center;margin-top:8px">
+      安裝後可離線使用，成績記錄也會保留
+    </div>
+  </div>
+</div>
+
 <!-- SPLASH -->
 <div id="screen-splash">
   <div class="splash-symbol">×</div>
@@ -1262,14 +1325,24 @@ function exportScores() {
 // ── PWA 安裝 ──
 let _installPrompt = null;
 
+// 偵測平台
+const _ua = navigator.userAgent;
+const _isIOS        = /iP(hone|ad|od)/.test(_ua) && !window.MSStream;
+const _isMacSafari  = /Macintosh/.test(_ua) && /Safari/.test(_ua) && !/Chrome/.test(_ua);
+const _isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                   || window.navigator.standalone === true;
+
+function _showInstallBtn() {
+  if (_isStandalone) return; // 已是 App 模式，不顯示
+  const btn = document.getElementById('install-btn');
+  if (btn) btn.style.display = 'block';
+}
+
+// Chrome / Edge / Android：攔截原生安裝提示
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   _installPrompt = e;
-  // 顯示安裝按鈕（只在非 standalone 模式下）
-  if (!window.matchMedia('(display-mode: standalone)').matches) {
-    const btn = document.getElementById('install-btn');
-    if (btn) btn.style.display = 'block';
-  }
+  _showInstallBtn();
 });
 
 window.addEventListener('appinstalled', () => {
@@ -1278,14 +1351,33 @@ window.addEventListener('appinstalled', () => {
   if (btn) btn.style.display = 'none';
 });
 
+// iOS / macOS Safari：沒有 beforeinstallprompt，直接顯示按鈕
+if ((_isIOS || _isMacSafari) && !_isStandalone) {
+  _showInstallBtn();
+}
+
 async function installApp() {
-  if (!_installPrompt) return;
-  const result = await _installPrompt.prompt();
-  if (result.outcome === 'accepted') {
-    _installPrompt = null;
-    const btn = document.getElementById('install-btn');
-    if (btn) btn.style.display = 'none';
+  if (_installPrompt) {
+    // ✅ 完整支援：直接觸發原生安裝
+    const result = await _installPrompt.prompt();
+    if (result.outcome === 'accepted') {
+      _installPrompt = null;
+      const btn = document.getElementById('install-btn');
+      if (btn) btn.style.display = 'none';
+    }
+  } else {
+    // ❌ 不支援：顯示說明提示框
+    const modal = document.getElementById('install-modal');
+    modal.style.display = 'flex';
+    // 根據平台顯示對應說明
+    document.getElementById('modal-ios').style.display        = _isIOS ? 'block' : 'none';
+    document.getElementById('modal-mac-safari').style.display = _isMacSafari ? 'block' : 'none';
+    document.getElementById('modal-other').style.display      = (!_isIOS && !_isMacSafari) ? 'block' : 'none';
   }
+}
+
+function closeInstallModal() {
+  document.getElementById('install-modal').style.display = 'none';
 }
 
 // ── Service Worker + 版本 ──
