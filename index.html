@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>乘法競速</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1923">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1923;
+  --bg2: #162030;
+  --bg3: #1d2d40;
+  --ink: #e8f0f8;
+  --ink-dim: #6a88a8;
+  --accent: #00d4ff;
+  --accent2: #ff6b35;
+  --gold: #ffd700;
+  --green: #00e676;
+  --red: #ff4444;
+  --card: #162030;
+  --border: #1e3550;
+  --border-bright: #2a4a6a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 16px;
+  color: var(--ink);
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(0,212,255,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(255,107,53,0.06) 0%, transparent 60%);
+}
+
+/* ── SPLASH ── */
+#screen-splash {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 20% 10%, rgba(0,212,255,0.12) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 90%, rgba(255,107,53,0.10) 0%, transparent 55%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px;
+}
+.splash-symbol {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 6rem;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 8px;
+  animation: splash-drop 0.6s cubic-bezier(0.22,1,0.36,1) both;
+  text-shadow: 0 0 60px rgba(0,212,255,0.4);
+}
+@keyframes splash-drop {
+  from { transform: translateY(-30px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+.splash-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 3.2rem;
+  letter-spacing: 6px;
+  color: var(--ink);
+  animation: splash-drop 0.6s 0.1s cubic-bezier(0.22,1,0.36,1) both;
+  margin-bottom: 4px;
+}
+.splash-sub {
+  font-size: 0.85rem; color: var(--ink-dim);
+  margin-bottom: 48px;
+  animation: splash-drop 0.6s 0.2s cubic-bezier(0.22,1,0.36,1) both;
+}
+.splash-btn {
+  padding: 18px 56px;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.6rem; letter-spacing: 4px;
+  border: 2px solid var(--accent);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  animation: splash-drop 0.6s 0.3s cubic-bezier(0.22,1,0.36,1) both;
+  position: relative;
+}
+.splash-btn::after {
+  content: '';
+  position: absolute; inset: -2px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 0 rgba(0,212,255,0.5);
+  animation: pulse-ring 2s ease-in-out infinite 0.5s;
+}
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(0,212,255,0.45); }
+  70%  { box-shadow: 0 0 0 14px rgba(0,212,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,212,255,0); }
+}
+.splash-btn:hover { background: var(--accent); color: var(--bg); box-shadow: 0 0 40px rgba(0,212,255,0.3); }
+.splash-meta {
+  position: absolute; bottom: 24px;
+  text-align: center; font-size: 0.75rem; color: var(--ink-dim); opacity: 0.6;
+}
+.splash-meta .sv { color: var(--accent); font-family: 'Bebas Neue', cursive; font-size: 0.9rem; }
+
+/* ── UPDATE BAR ── */
+#update-bar {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+  background: #0a3a1a; border-top: 2px solid var(--green);
+  padding: 12px 20px; align-items: center; justify-content: space-between;
+  gap: 12px; font-size: 0.9rem; color: var(--ink);
+  box-shadow: 0 -4px 20px rgba(0,230,118,0.2);
+}
+#update-bar button {
+  padding: 8px 20px; background: var(--green); color: #0a2a14;
+  border: none; border-radius: 4px; font-weight: 900;
+  cursor: pointer; font-size: 0.9rem; white-space: nowrap;
+}
+
+/* ── SCREEN ── */
+.screen { display: none; width: 100%; max-width: 480px; }
+.screen.active { display: flex; flex-direction: column; align-items: center; }
+
+/* ── TOP BAR ── */
+.top-bar {
+  width: 100%; display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 6px;
+}
+#version-tag { font-size: 0.68rem; color: var(--ink-dim); opacity: 0.45; }
+.page-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.8rem; letter-spacing: 3px; color: var(--ink);
+  margin-bottom: 20px; width: 100%; text-align: center;
+}
+.page-title span { color: var(--accent); }
+
+/* ── MENU CARDS ── */
+.card {
+  width: 100%; background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px;
+  margin-bottom: 14px;
+}
+.card-title {
+  font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--ink-dim); margin-bottom: 12px; font-weight: 700;
+}
+
+/* 模式選擇 — 兩個大按鈕 */
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mode-btn {
+  padding: 20px 10px 16px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  color: var(--ink-dim);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+  position: relative;
+}
+.mode-btn .m-icon {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 2rem; color: var(--accent); display: block; margin-bottom: 4px;
+}
+.mode-btn .m-label { font-size: 1rem; font-weight: 700; display: block; }
+.mode-btn .m-sub { font-size: 0.75rem; color: var(--ink-dim); display: block; margin-top: 2px; }
+.mode-btn.selected {
+  border-color: var(--accent);
+  background: rgba(0,212,255,0.08);
+  color: var(--ink);
+}
+.mode-btn.selected .m-sub { color: var(--accent); }
+.mode-btn:hover:not(.selected) { border-color: var(--border-bright); color: var(--ink); }
+
+/* 難度選擇 — 四個按鈕 */
+.diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.diff-btn {
+  padding: 14px 8px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  color: var(--ink-dim);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+  font-family: 'Noto Sans TC', sans-serif;
+}
+.diff-btn .d-level { font-family: 'Bebas Neue', cursive; font-size: 1.1rem; color: var(--accent); display: block; margin-bottom: 2px; }
+.diff-btn .d-expr { font-size: 1rem; font-weight: 900; display: block; }
+.diff-btn .d-range { font-size: 0.72rem; color: var(--ink-dim); display: block; margin-top: 2px; }
+.diff-btn.selected { border-color: var(--accent2); background: rgba(255,107,53,0.08); }
+.diff-btn.selected .d-level { color: var(--accent2); }
+.diff-btn:hover:not(.selected) { border-color: var(--border-bright); color: var(--ink); }
+
+.start-btn {
+  width: 100%;
+  padding: 18px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none; border-radius: 8px;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.6rem; letter-spacing: 3px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  margin-bottom: 10px;
+}
+.start-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.start-btn:active { transform: translateY(0); }
+.score-link-btn {
+  width: 100%; padding: 12px;
+  background: transparent; color: var(--ink-dim);
+  border: 1px solid var(--border); border-radius: 8px;
+  font-size: 0.95rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.score-link-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── GAME SCREEN ── */
+.game-header {
+  width: 100%; display: flex;
+  justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
+}
+.back-btn {
+  background: none; border: 1px solid var(--border);
+  color: var(--ink-dim); padding: 7px 14px; border-radius: 6px;
+  cursor: pointer; font-size: 0.85rem; transition: all 0.15s;
+}
+.back-btn:hover { border-color: var(--ink-dim); color: var(--ink); }
+
+/* 計時 / 進度 HUD */
+.hud {
+  width: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px; margin-bottom: 20px;
+}
+.hud-cell {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 8px; text-align: center;
+}
+.hud-cell .hc-label { font-size: 0.65rem; letter-spacing: 2px; color: var(--ink-dim); text-transform: uppercase; }
+.hud-cell .hc-val {
+  font-family: 'Bebas Neue', cursive; font-size: 1.8rem;
+  color: var(--accent); line-height: 1; margin-top: 2px;
+}
+.hud-cell.hud-time .hc-val { color: var(--gold); }
+.hud-cell.hud-score .hc-val { color: var(--green); }
+.hud-cell.hud-err .hc-val { color: var(--red); }
+.hud-cell.hud-time.warning .hc-val { color: var(--red); animation: blink-time 0.5s ease-in-out infinite; }
+@keyframes blink-time { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* 進度條（十題模式） */
+.progress-bar-wrap {
+  width: 100%; height: 6px;
+  background: var(--bg3); border-radius: 3px;
+  margin-bottom: 24px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* 題目區 */
+.question-area {
+  width: 100%; text-align: center;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 32px 24px 28px;
+  margin-bottom: 20px; position: relative; overflow: hidden;
+}
+.question-area::before {
+  content: '×';
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  font-family: 'Bebas Neue', cursive; font-size: 8rem;
+  color: rgba(0,212,255,0.04); pointer-events: none;
+}
+.q-num-label { font-size: 0.7rem; letter-spacing: 2px; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 12px; }
+.q-expr {
+  font-family: 'Bebas Neue', cursive;
+  font-size: clamp(2.6rem, 10vw, 3.8rem);
+  color: var(--ink);
+  letter-spacing: 4px;
+  line-height: 1;
+  margin-bottom: 24px;
+}
+.q-expr .op { color: var(--accent); }
+
+/* 答案輸入 */
+.answer-row {
+  display: flex; gap: 10px; align-items: center; justify-content: center;
+}
+.answer-input {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 2.4rem;
+  width: 180px; padding: 12px 16px;
+  background: var(--bg); border: 2px solid var(--border-bright);
+  border-radius: 8px; color: var(--accent);
+  text-align: center; outline: none;
+  letter-spacing: 4px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  caret-color: var(--accent);
+}
+.answer-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.15); }
+.answer-input.correct {
+  border-color: var(--green);
+  box-shadow: 0 0 20px rgba(0,230,118,0.25);
+  animation: flash-correct 0.35s ease;
+}
+.answer-input.wrong {
+  border-color: var(--red);
+  box-shadow: 0 0 20px rgba(255,68,68,0.3);
+  animation: shake 0.45s ease;
+}
+@keyframes flash-correct {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+.submit-btn {
+  padding: 14px 20px;
+  background: var(--accent); color: var(--bg);
+  border: none; border-radius: 8px;
+  font-family: 'Bebas Neue', cursive; font-size: 1.4rem;
+  cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+.submit-btn:hover { opacity: 0.85; }
+.submit-btn:active { transform: scale(0.95); }
+
+/* 即時回饋 */
+.feedback-row {
+  min-height: 28px; text-align: center;
+  font-size: 0.9rem; margin-top: 12px;
+  font-weight: 700; transition: opacity 0.2s;
+}
+.feedback-row.fb-correct { color: var(--green); }
+.feedback-row.fb-wrong { color: var(--red); }
+
+/* ── 結算畫面 ── */
+.result-hero {
+  width: 100%; background: var(--card);
+  border: 1px solid var(--border); border-radius: 16px;
+  padding: 28px 24px; text-align: center; margin-bottom: 14px;
+}
+.result-grade {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 5rem; line-height: 1;
+  margin-bottom: 4px;
+}
+.result-grade.grade-s { color: var(--gold); text-shadow: 0 0 30px rgba(255,215,0,0.4); }
+.result-grade.grade-a { color: var(--green); }
+.result-grade.grade-b { color: var(--accent); }
+.result-grade.grade-c { color: var(--accent2); }
+.result-grade.grade-d { color: var(--ink-dim); }
+.result-tagline { font-size: 0.85rem; color: var(--ink-dim); margin-bottom: 20px; }
+.result-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+}
+.rs-cell { background: var(--bg3); border-radius: 8px; padding: 12px 8px; }
+.rs-cell .rs-label { font-size: 0.65rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 1px; }
+.rs-cell .rs-val { font-family: 'Bebas Neue', cursive; font-size: 1.6rem; color: var(--ink); margin-top: 4px; }
+
+.result-list {
+  width: 100%; display: flex; flex-direction: column; gap: 6px;
+  max-height: 260px; overflow-y: auto; margin-bottom: 14px;
+}
+.result-row {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 14px;
+}
+.result-row .rr-expr { font-family: 'Bebas Neue', cursive; font-size: 1.1rem; color: var(--ink); letter-spacing: 2px; }
+.result-row .rr-ans { font-family: 'Bebas Neue', cursive; font-size: 1.1rem; }
+.result-row.rr-ok  { border-color: rgba(0,230,118,0.2); }
+.result-row.rr-ok .rr-ans { color: var(--green); }
+.result-row.rr-bad { border-color: rgba(255,68,68,0.2); background: rgba(255,68,68,0.04); }
+.result-row.rr-bad .rr-ans { color: var(--red); }
+.result-row .rr-correct-ans { font-size: 0.8rem; color: var(--ink-dim); margin-left: 8px; }
+
+.action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.btn-retry {
+  padding: 14px; background: var(--accent); color: var(--bg);
+  border: none; border-radius: 8px;
+  font-family: 'Bebas Neue', cursive; font-size: 1.3rem; letter-spacing: 2px;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.btn-retry:hover { opacity: 0.85; }
+.btn-menu {
+  padding: 14px; background: transparent; color: var(--ink-dim);
+  border: 1px solid var(--border); border-radius: 8px;
+  font-family: 'Bebas Neue', cursive; font-size: 1.3rem; letter-spacing: 2px;
+  cursor: pointer; transition: all 0.15s;
+}
+.btn-menu:hover { border-color: var(--ink-dim); color: var(--ink); }
+
+/* ── 成績榜 ── */
+.scores-section {
+  width: 100%; background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 18px; margin-bottom: 12px;
+}
+.scores-section h3 {
+  font-family: 'Bebas Neue', cursive; font-size: 1rem; letter-spacing: 2px;
+  color: var(--gold); margin-bottom: 10px;
+  border-left: 3px solid var(--gold); padding-left: 10px;
+}
+.scores-table { width: 100%; border-collapse: collapse; }
+.scores-table th { font-size: 0.72rem; color: var(--ink-dim); font-weight: 400; text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+.scores-table td { padding: 8px 8px; font-size: 0.9rem; border-bottom: 1px solid rgba(30,53,80,0.5); }
+.rank-1 td:first-child { color: var(--gold); font-size: 1.1rem; }
+.rank-2 td:first-child { color: #c0c0c0; }
+.rank-3 td:first-child { color: #cd7f32; }
+.scores-empty { color: var(--ink-dim); font-size: 0.85rem; padding: 8px; }
+.export-btn {
+  width: 100%; margin-top: 8px; padding: 10px;
+  background: transparent; color: var(--ink-dim);
+  border: 1px solid var(--border); border-radius: 6px;
+  font-size: 0.85rem; cursor: pointer; transition: all 0.15s;
+}
+.export-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── 30秒模式 — 倒數圓弧 ── */
+#countdown-ring { position: relative; width: 100px; height: 100px; margin: 0 auto 20px; }
+#countdown-ring svg { transform: rotate(-90deg); }
+#ring-track { fill: none; stroke: var(--bg3); stroke-width: 6; }
+#ring-fill  { fill: none; stroke: var(--gold); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.9s linear; }
+#countdown-num {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', cursive; font-size: 2.2rem; color: var(--gold);
+}
+#countdown-ring.warning #ring-fill { stroke: var(--red); }
+#countdown-ring.warning #countdown-num { color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- 更新提示條 -->
+<div id="update-bar">
+  <span>🎉 新版本可用！</span>
+  <button onclick="location.reload()">立即更新</button>
+</div>
+
+<!-- SPLASH -->
+<div id="screen-splash">
+  <div class="splash-symbol">×</div>
+  <h1 class="splash-title">乘法競速</h1>
+  <p class="splash-sub">十題競速 &amp; 30秒極限挑戰</p>
+  <button class="splash-btn" onclick="splashStart()">START</button>
+  <div class="splash-meta">
+    <div class="sv" id="splash-version"></div>
+    <div>乘法競速版 · Multiplication Sprint</div>
+  </div>
+</div>
+
+<!-- MENU -->
+<div class="screen active" id="screen-menu">
+  <div class="top-bar">
+    <div id="version-tag"></div>
+    <div></div>
+  </div>
+  <div class="page-title">乘法<span>競速</span></div>
+
+  <div class="card">
+    <div class="card-title">遊戲模式</div>
+    <div class="mode-grid">
+      <button class="mode-btn selected" data-group="mode" data-val="ten">
+        <span class="m-icon">10</span>
+        <span class="m-label">十題競速</span>
+        <span class="m-sub">答完10題，拼最快時間</span>
+      </button>
+      <button class="mode-btn" data-group="mode" data-val="sprint">
+        <span class="m-icon">30</span>
+        <span class="m-label">30秒競速</span>
+        <span class="m-sub">限時30秒，拼最多答題</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">難度</div>
+    <div class="diff-grid">
+      <button class="diff-btn selected" data-group="diff" data-val="1x1">
+        <span class="d-level">LV 1</span>
+        <span class="d-expr">個位 × 個位</span>
+        <span class="d-range">2~9 × 2~9</span>
+      </button>
+      <button class="diff-btn" data-group="diff" data-val="2x1">
+        <span class="d-level">LV 2</span>
+        <span class="d-expr">二位 × 個位</span>
+        <span class="d-range">11~99 × 2~9</span>
+      </button>
+      <button class="diff-btn" data-group="diff" data-val="3x1">
+        <span class="d-level">LV 3</span>
+        <span class="d-expr">三位 × 個位</span>
+        <span class="d-range">101~999 × 2~9</span>
+      </button>
+      <button class="diff-btn" data-group="diff" data-val="2x2">
+        <span class="d-level">LV 4</span>
+        <span class="d-expr">二位 × 二位</span>
+        <span class="d-range">11~99 × 11~99</span>
+      </button>
+    </div>
+  </div>
+
+  <button class="start-btn" id="start-btn">開始挑戰</button>
+  <button class="score-link-btn" onclick="showScreen('scores')">🏆 查看成績記錄</button>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="screen-game">
+  <div class="game-header">
+    <button class="back-btn" id="game-back-btn">◀ 返回</button>
+    <div style="font-family:'Bebas Neue',cursive;font-size:1rem;letter-spacing:2px;color:var(--ink-dim)" id="game-mode-label"></div>
+    <div style="width:60px"></div>
+  </div>
+
+  <!-- 十題模式進度條 -->
+  <div class="progress-bar-wrap" id="progress-wrap">
+    <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+  </div>
+
+  <!-- 30秒模式圓弧 -->
+  <div id="countdown-ring" style="display:none">
+    <svg width="100" height="100" viewBox="0 0 100 100">
+      <circle id="ring-track" cx="50" cy="50" r="44"/>
+      <circle id="ring-fill"  cx="50" cy="50" r="44"
+              stroke-dasharray="276.46" stroke-dashoffset="0"/>
+    </svg>
+    <div id="countdown-num">30</div>
+  </div>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="hud-cell hud-time" id="hud-time">
+      <div class="hc-label" id="hud-time-label">時間</div>
+      <div class="hc-val" id="hud-time-val">0.0</div>
+    </div>
+    <div class="hud-cell hud-score">
+      <div class="hc-label" id="hud-score-label">答對</div>
+      <div class="hc-val" id="hud-score-val">0</div>
+    </div>
+    <div class="hud-cell hud-err">
+      <div class="hc-label">失誤</div>
+      <div class="hc-val" id="hud-err-val">0</div>
+    </div>
+  </div>
+
+  <!-- 題目 -->
+  <div class="question-area">
+    <div class="q-num-label" id="q-num-label">QUESTION 1 / 10</div>
+    <div class="q-expr" id="q-expr">12 <span class="op">×</span> 7</div>
+    <div class="answer-row">
+      <input class="answer-input" type="number" id="answer-input"
+             inputmode="numeric" pattern="[0-9]*"
+             autocomplete="off" placeholder="？">
+      <button class="submit-btn" id="submit-btn">OK</button>
+    </div>
+    <div class="feedback-row" id="feedback-row"></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="screen" id="screen-result">
+  <div class="game-header">
+    <div style="width:60px"></div>
+    <div style="font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:3px;color:var(--ink-dim)">結算</div>
+    <div style="width:60px"></div>
+  </div>
+
+  <div class="result-hero">
+    <div class="result-grade" id="result-grade">S</div>
+    <div class="result-tagline" id="result-tagline">完美作答！</div>
+    <div class="result-stats">
+      <div class="rs-cell">
+        <div class="rs-label" id="rs-label-a">時間</div>
+        <div class="rs-val" id="rs-val-a">--</div>
+      </div>
+      <div class="rs-cell">
+        <div class="rs-label">答對</div>
+        <div class="rs-val" id="rs-val-correct">--</div>
+      </div>
+      <div class="rs-cell">
+        <div class="rs-label">失誤</div>
+        <div class="rs-val" id="rs-val-errors">--</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="result-list" id="result-list"></div>
+
+  <div class="action-row">
+    <button class="btn-retry" id="result-retry-btn">再來一次</button>
+    <button class="btn-menu" onclick="showScreen('menu')">選單</button>
+  </div>
+  <button class="score-link-btn" style="margin-top:10px" onclick="showScreen('scores')">🏆 查看成績記錄</button>
+</div>
+
+<!-- SCORES -->
+<div class="screen" id="screen-scores">
+  <div class="game-header">
+    <button class="back-btn" onclick="showScreen('menu')">◀ 返回</button>
+    <div style="font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:3px;color:var(--gold)">🏆 成績記錄</div>
+    <div style="width:60px"></div>
+  </div>
+  <div id="scores-content" style="width:100%;overflow-y:auto;padding-bottom:20px"></div>
+  <button class="export-btn" onclick="exportScores()">📥 匯出成績 JSON</button>
+</div>
+
+<script>
+// ── 工具 ──
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function genQuestion(diff) {
+  let a, b;
+  switch (diff) {
+    case '1x1': a = rand(2,9);   b = rand(2,9);   break;
+    case '2x1': a = rand(11,99); b = rand(2,9);   break;
+    case '3x1': a = rand(101,999); b = rand(2,9); break;
+    case '2x2': a = rand(11,99); b = rand(11,99); break;
+  }
+  return { a, b, ans: a * b };
+}
+
+// ── 狀態 ──
+let state = {
+  mode: 'ten',   // 'ten' | 'sprint'
+  diff: '1x1',
+  questions: [],
+  qi: 0,         // 當前題目 index（ten模式）
+  correct: 0,
+  errors: 0,
+  elapsed: 0,    // 十題模式計時（秒）
+  remaining: 30, // 30秒模式倒數
+  timer: null,
+  timerStart: 0,
+  log: [],       // { expr, userAns, correct, ok }
+  running: false,
+};
+
+// ── 畫面切換 ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  if (id === 'scores') renderScores();
+}
+
+function splashStart() {
+  document.getElementById('screen-splash').style.display = 'none';
+}
+
+// ── 選項按鈕 ──
+document.querySelectorAll('[data-group]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const g = btn.dataset.group;
+    document.querySelectorAll(`[data-group="${g}"]`).forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    state[g] = btn.dataset.val;
+  });
+});
+
+// ── 開始遊戲 ──
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('game-back-btn').addEventListener('click', () => {
+  clearInterval(state.timer);
+  state.running = false;
+  showScreen('menu');
+});
+document.getElementById('result-retry-btn').addEventListener('click', startGame);
+
+function startGame() {
+  clearInterval(state.timer);
+  state.correct = 0;
+  state.errors  = 0;
+  state.elapsed = 0;
+  state.remaining = 30;
+  state.log = [];
+  state.running = true;
+
+  const isSprint = state.mode === 'sprint';
+  document.getElementById('game-mode-label').textContent = isSprint ? '30 秒競速' : '十題競速';
+  document.getElementById('progress-wrap').style.display = isSprint ? 'none' : 'block';
+  document.getElementById('countdown-ring').style.display = isSprint ? 'block' : 'none';
+
+  // HUD label 依模式
+  document.getElementById('hud-time-label').textContent = isSprint ? '剩餘' : '時間';
+  document.getElementById('hud-score-label').textContent = isSprint ? '答對' : '答對';
+
+  updateHUD();
+  showScreen('game');
+
+  if (!isSprint) {
+    // 十題模式：生成10題，計時開始
+    state.questions = Array.from({length:10}, () => genQuestion(state.diff));
+    state.qi = 0;
+    state.timerStart = performance.now();
+    state.timer = setInterval(() => {
+      state.elapsed = (performance.now() - state.timerStart) / 1000;
+      updateHUD();
+    }, 100);
+    showQuestion();
+  } else {
+    // 30秒模式：無限題，倒數
+    state.remaining = 30;
+    setRing(30, 30);
+    state.timerStart = performance.now();
+    state.timer = setInterval(() => {
+      state.remaining = 30 - (performance.now() - state.timerStart) / 1000;
+      if (state.remaining <= 0) {
+        state.remaining = 0;
+        clearInterval(state.timer);
+        state.running = false;
+        updateHUD();
+        setRing(0, 30);
+        setTimeout(endGame, 300);
+        return;
+      }
+      updateHUD();
+      setRing(state.remaining, 30);
+      // warning
+      const ring = document.getElementById('countdown-ring');
+      const hud  = document.getElementById('hud-time');
+      if (state.remaining <= 10) {
+        ring.classList.add('warning');
+        hud.classList.add('warning');
+      }
+    }, 100);
+    showQuestion();
+  }
+}
+
+function showQuestion() {
+  const isSprint = state.mode === 'sprint';
+  let q;
+  if (!isSprint) {
+    if (state.qi >= 10) { endGame(); return; }
+    q = state.questions[state.qi];
+    document.getElementById('q-num-label').textContent = `QUESTION ${state.qi + 1} / 10`;
+    document.getElementById('progress-bar').style.width = `${(state.qi / 10) * 100}%`;
+  } else {
+    q = genQuestion(state.diff);
+    state.currentQ = q;
+    document.getElementById('q-num-label').textContent = `第 ${state.log.length + 1} 題`;
+  }
+  state.currentQ = q;
+  document.getElementById('q-expr').innerHTML =
+    `${q.a} <span class="op">×</span> ${q.b}`;
+  const input = document.getElementById('answer-input');
+  input.value = '';
+  input.className = 'answer-input';
+  input.focus();
+  clearFeedback();
+}
+
+function clearFeedback() {
+  const fb = document.getElementById('feedback-row');
+  fb.textContent = '';
+  fb.className = 'feedback-row';
+}
+
+function submitAnswer() {
+  if (!state.running) return;
+  const input = document.getElementById('answer-input');
+  const val = parseInt(input.value, 10);
+  if (isNaN(val) || input.value.trim() === '') return;
+  const q = state.currentQ;
+  const ok = val === q.ans;
+
+  state.log.push({ expr: `${q.a} × ${q.b}`, userAns: val, correct: q.ans, ok });
+
+  if (ok) {
+    state.correct++;
+    input.className = 'answer-input correct';
+    showFeedback('✓  正確！', true);
+  } else {
+    state.errors++;
+    input.className = 'answer-input wrong';
+    showFeedback(`✗  正確答案是 ${q.ans}`, false);
+  }
+
+  updateHUD();
+
+  const delay = ok ? 350 : 900;
+  setTimeout(() => {
+    if (!state.running && state.mode === 'sprint') return;
+    if (state.mode === 'ten') state.qi++;
+    showQuestion();
+  }, delay);
+}
+
+function showFeedback(msg, ok) {
+  const fb = document.getElementById('feedback-row');
+  fb.textContent = msg;
+  fb.className = 'feedback-row ' + (ok ? 'fb-correct' : 'fb-wrong');
+}
+
+function updateHUD() {
+  const isSprint = state.mode === 'sprint';
+  document.getElementById('hud-time-val').textContent =
+    isSprint ? Math.ceil(state.remaining) + 's' : state.elapsed.toFixed(1) + 's';
+  document.getElementById('hud-score-val').textContent = state.correct;
+  document.getElementById('hud-err-val').textContent   = state.errors;
+}
+
+// 圓弧
+const RING_CIRC = 2 * Math.PI * 44; // 276.46
+function setRing(current, total) {
+  const pct = current / total;
+  document.getElementById('ring-fill').style.strokeDashoffset = RING_CIRC * (1 - pct);
+  document.getElementById('countdown-num').textContent = Math.ceil(current);
+}
+
+// 送出按鈕 & Enter
+document.getElementById('submit-btn').addEventListener('click', submitAnswer);
+document.getElementById('answer-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitAnswer();
+});
+
+// ── 結算 ──
+function endGame() {
+  clearInterval(state.timer);
+  state.running = false;
+
+  const isSprint = state.mode === 'sprint';
+  const time = isSprint ? 30 : parseFloat(state.elapsed.toFixed(1));
+  const correct = state.correct;
+  const errors  = state.errors;
+  const total   = state.log.length;
+
+  // 評等
+  let grade, tagline;
+  if (!isSprint) {
+    const t = time;
+    if (errors === 0 && t < 15) { grade='S'; tagline='完美神速！'; }
+    else if (errors === 0 && t < 25) { grade='A'; tagline='完美作答！'; }
+    else if (errors <= 1 && t < 35) { grade='B'; tagline='表現不錯！'; }
+    else if (errors <= 3) { grade='C'; tagline='繼續加油！'; }
+    else { grade='D'; tagline='多多練習！'; }
+  } else {
+    if (correct >= 25) { grade='S'; tagline='30秒答對25題！'; }
+    else if (correct >= 18) { grade='A'; tagline='非常厲害！'; }
+    else if (correct >= 12) { grade='B'; tagline='表現不錯！'; }
+    else if (correct >= 6)  { grade='C'; tagline='繼續加油！'; }
+    else { grade='D'; tagline='多多練習！'; }
+  }
+
+  document.getElementById('result-grade').textContent = grade;
+  document.getElementById('result-grade').className = 'result-grade grade-' + grade.toLowerCase();
+  document.getElementById('result-tagline').textContent = tagline;
+
+  if (!isSprint) {
+    document.getElementById('rs-label-a').textContent = '時間';
+    document.getElementById('rs-val-a').textContent   = time + 's';
+  } else {
+    document.getElementById('rs-label-a').textContent = '答題數';
+    document.getElementById('rs-val-a').textContent   = total;
+  }
+  document.getElementById('rs-val-correct').textContent = correct;
+  document.getElementById('rs-val-errors').textContent  = errors;
+
+  // 題目列表
+  const list = document.getElementById('result-list');
+  list.innerHTML = '';
+  state.log.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'result-row ' + (item.ok ? 'rr-ok' : 'rr-bad');
+    row.innerHTML = `
+      <span class="rr-expr">${item.expr} = ${item.correct}</span>
+      <span class="rr-ans">
+        ${item.ok ? '✓ ' + item.userAns : '✗ ' + item.userAns}
+        ${!item.ok ? `<span class="rr-correct-ans">（正解：${item.correct}）</span>` : ''}
+      </span>`;
+    list.appendChild(row);
+  });
+
+  // 存成績
+  saveScore({ mode: state.mode, diff: state.diff, time, correct, errors, total });
+
+  showScreen('result');
+}
+
+// ── 成績記錄 ──
+const SCORES_KEY = 'multPWA_scores';
+
+function saveScore({ mode, diff, time, correct, errors, total }) {
+  const scores = JSON.parse(localStorage.getItem(SCORES_KEY) || '{}');
+  const key = `${mode}_${diff}`;
+  if (!scores[key]) scores[key] = [];
+
+  const date = new Date().toLocaleDateString('zh-TW');
+  const entry = { time, correct, errors, total, date };
+
+  scores[key].push(entry);
+
+  // 排序：十題模式依時間升冪，30秒依答對降冪
+  scores[key].sort((a, b) =>
+    mode === 'ten' ? a.time - b.time : b.correct - a.correct
+  );
+  scores[key] = scores[key].slice(0, 5);
+
+  localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+}
+
+function renderScores() {
+  const scores = JSON.parse(localStorage.getItem(SCORES_KEY) || '{}');
+  const container = document.getElementById('scores-content');
+  container.innerHTML = '';
+
+  const medals = ['🥇','🥈','🥉','4','5'];
+  const diffLabel = { '1x1':'個位×個位', '2x1':'二位×個位', '3x1':'三位×個位', '2x2':'二位×二位' };
+  const modeLabel = { ten:'十題競速', sprint:'30秒競速' };
+
+  const allKeys = Object.keys(scores).sort();
+  if (allKeys.length === 0) {
+    container.innerHTML = '<p style="color:var(--ink-dim);text-align:center;padding:24px;font-size:0.9rem">還沒有成績記錄，快去挑戰！</p>';
+    return;
+  }
+
+  allKeys.forEach(key => {
+    const rows = scores[key];
+    if (!rows || rows.length === 0) return;
+    const [mode, diff] = key.split('_');
+    const isSprint = mode === 'sprint';
+    const section = document.createElement('div');
+    section.className = 'scores-section';
+    section.innerHTML = `<h3>${modeLabel[mode] || mode} — ${diffLabel[diff] || diff}</h3>
+      <table class="scores-table">
+        <tr>
+          <th>名次</th>
+          ${isSprint ? '<th>答對</th><th>答題</th>' : '<th>時間</th>'}
+          <th>失誤</th><th>日期</th>
+        </tr>
+        ${rows.map((r,i) => `
+          <tr class="rank-${i+1}">
+            <td>${medals[i]||i+1}</td>
+            ${isSprint
+              ? `<td style="color:var(--green);font-weight:700">${r.correct}</td><td style="color:var(--ink-dim);font-size:.8rem">${r.total}題</td>`
+              : `<td style="color:var(--gold);font-weight:700">${r.time}s</td>`}
+            <td>${r.errors}次</td>
+            <td style="font-size:.75rem;color:var(--ink-dim)">${r.date||''}</td>
+          </tr>`).join('')}
+      </table>`;
+    container.appendChild(section);
+  });
+}
+
+function exportScores() {
+  const data = localStorage.getItem(SCORES_KEY) || '{}';
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'mult-scores.json';
+  a.click();
+}
+
+// ── Service Worker + 版本 ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      const sw = reg.active || reg.waiting || reg.installing;
+      if (sw) sw.postMessage('GET_VERSION');
+
+      reg.addEventListener('updatefound', () => {
+        const newSW = reg.installing;
+        newSW.addEventListener('statechange', () => {
+          if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+            const bar = document.getElementById('update-bar');
+            if (bar) {
+              bar.dataset.hasUpdate = '1';
+              if (document.getElementById('screen-menu').classList.contains('active'))
+                bar.style.display = 'flex';
+            }
+          }
+        });
+      });
+    });
+
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if (e.data?.type === 'VERSION') {
+        const v = e.data.version;
+        const tag = document.getElementById('version-tag');
+        const splash = document.getElementById('splash-version');
+        if (tag)    tag.textContent = `v ${v}`;
+        if (splash) splash.textContent = `v ${v}`;
+      }
+    });
+  });
+}
+</script>
+</body>
+</html>

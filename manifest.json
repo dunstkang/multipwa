@@ -1,0 +1,17 @@
+{
+  "name": "乘法競速",
+  "short_name": "乘法",
+  "description": "乘法心算練習，十題競速 & 30秒競速",
+  "start_url": "/multipwa/index.html",
+  "scope": "/multipwa/",
+  "display": "standalone",
+  "background_color": "#0f1923",
+  "theme_color": "#0f1923",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
