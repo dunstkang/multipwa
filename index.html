@@ -454,6 +454,24 @@ body {
   <button onclick="location.reload()">立即更新</button>
 </div>
 
+<!-- 安裝按鈕（右上角懸浮） -->
+<button id="install-btn" onclick="installApp()" style="
+  display:none; position:fixed; top:14px; right:14px; z-index:998;
+  padding:8px 14px;
+  background:rgba(167,139,250,0.12);
+  border:1.5px solid #a78bfa;
+  border-radius:20px;
+  color:#a78bfa;
+  font-size:0.78rem; font-family:'Noto Sans TC',sans-serif; font-weight:700;
+  cursor:pointer; letter-spacing:1px;
+  backdrop-filter:blur(8px);
+  transition:background 0.15s, transform 0.1s;
+  white-space:nowrap;
+" onmouseover="this.style.background='rgba(167,139,250,0.22)'"
+   onmouseout="this.style.background='rgba(167,139,250,0.12)'">
+  📲 加入主畫面
+</button>
+
 <!-- SPLASH -->
 <div id="screen-splash">
   <div class="splash-symbol">×</div>
@@ -1239,6 +1257,35 @@ function exportScores() {
   a.href = URL.createObjectURL(blob);
   a.download = 'mult-scores.json';
   a.click();
+}
+
+// ── PWA 安裝 ──
+let _installPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _installPrompt = e;
+  // 顯示安裝按鈕（只在非 standalone 模式下）
+  if (!window.matchMedia('(display-mode: standalone)').matches) {
+    const btn = document.getElementById('install-btn');
+    if (btn) btn.style.display = 'block';
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  _installPrompt = null;
+  const btn = document.getElementById('install-btn');
+  if (btn) btn.style.display = 'none';
+});
+
+async function installApp() {
+  if (!_installPrompt) return;
+  const result = await _installPrompt.prompt();
+  if (result.outcome === 'accepted') {
+    _installPrompt = null;
+    const btn = document.getElementById('install-btn');
+    if (btn) btn.style.display = 'none';
+  }
 }
 
 // ── Service Worker + 版本 ──
