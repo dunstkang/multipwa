@@ -471,12 +471,13 @@ body {
 .answer-display {
   font-family:'Bebas Neue',cursive;
   font-size:2.4rem; letter-spacing:4px;
-  min-width:140px; padding:10px 16px;
-  background:var(--bg); border:2px solid var(--border-bright);
+  min-width:100px; padding:8px 14px;
+  background:var(--bg); border:2px solid var(--accent);
   border-radius:8px; color:var(--accent);
-  text-align:center; flex:1;
+  text-align:center;
   transition:border-color 0.15s, box-shadow 0.15s;
-  display:flex; align-items:center; justify-content:center;
+  display:inline-flex; align-items:center; justify-content:center;
+  box-shadow:0 0 0 3px rgba(0,212,255,0.12);
 }
 .answer-display.correct {
   border-color:var(--green); box-shadow:0 0 20px rgba(0,230,118,0.25);
@@ -516,10 +517,11 @@ body {
 
 <!-- 共用數字鍵盤 -->
 <div id="numpad-wrap" style="
-  display:none; position:fixed; bottom:0; left:0; right:0; z-index:800;
-  background:var(--bg2); border-top:1px solid var(--border);
-  padding:10px 12px 20px; max-width:480px; margin:0 auto;
-  box-shadow:0 -8px 30px rgba(0,0,0,0.4);
+  display:none; position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:480px; z-index:800;
+  background:var(--bg2); border-top:1px solid var(--border-bright);
+  padding:8px 10px 16px;
+  box-shadow:0 -6px 24px rgba(0,0,0,0.5);
 ">
   <div class="numpad">
     <button class="np-btn" data-np="1">1</button>
@@ -749,11 +751,12 @@ body {
   <!-- 題目區 -->
   <div class="question-area" style="margin-bottom:14px">
     <div class="q-num-label" id="race-q-label">QUESTION 1</div>
-    <div class="q-expr" id="race-q-expr">— × —</div>
-    <div class="answer-row" style="justify-content:center">
-      <div class="answer-display" id="race-answer-display">？</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap">
+      <div class="q-expr" id="race-q-expr" style="margin-bottom:0">— × —</div>
+      <div style="font-family:'Bebas Neue',cursive;font-size:clamp(2.6rem,10vw,3.8rem);color:var(--ink-dim)">=</div>
+      <div class="answer-display" id="race-answer-display" style="min-width:120px;font-size:clamp(2.2rem,9vw,3.4rem)">？</div>
     </div>
-    <div class="feedback-row" id="race-feedback"></div>
+    <div class="feedback-row" id="race-feedback" style="margin-top:10px"></div>
   </div>
 
   <!-- mini HUD -->
@@ -847,11 +850,12 @@ body {
   <!-- 題目 -->
   <div class="question-area">
     <div class="q-num-label" id="q-num-label">QUESTION 1 / 10</div>
-    <div class="q-expr" id="q-expr">12 <span class="op">×</span> 7</div>
-    <div class="answer-row" style="justify-content:center">
-      <div class="answer-display" id="answer-display">？</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap">
+      <div class="q-expr" id="q-expr" style="margin-bottom:0">12 <span class="op">×</span> 7</div>
+      <div style="font-family:'Bebas Neue',cursive;font-size:clamp(2.6rem,10vw,3.8rem);color:var(--ink-dim)">=</div>
+      <div class="answer-display" id="answer-display" style="min-width:120px;font-size:clamp(2.2rem,9vw,3.4rem)">？</div>
     </div>
-    <div class="feedback-row" id="feedback-row"></div>
+    <div class="feedback-row" id="feedback-row" style="margin-top:10px"></div>
   </div>
 </div>
 
