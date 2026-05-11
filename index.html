@@ -466,7 +466,23 @@ body {
     <div id="version-tag"></div>
     <div></div>
   </div>
-  <div class="page-title">乘法<span>競速</span></div>
+  <div class="page-title" id="menu-title">乘法<span>競速</span></div>
+
+  <div class="card">
+    <div class="card-title">遊戲類型</div>
+    <div class="mode-grid">
+      <button class="mode-btn selected" data-group="type" data-val="mult">
+        <span class="m-icon">×</span>
+        <span class="m-label">乘法</span>
+        <span class="m-sub">Multiplication</span>
+      </button>
+      <button class="mode-btn" data-group="type" data-val="div">
+        <span class="m-icon">÷</span>
+        <span class="m-label">除法</span>
+        <span class="m-sub">Division</span>
+      </button>
+    </div>
+  </div>
 
   <div class="card">
     <div class="card-title">遊戲模式</div>
@@ -486,27 +502,8 @@ body {
 
   <div class="card">
     <div class="card-title">難度</div>
-    <div class="diff-grid">
-      <button class="diff-btn selected" data-group="diff" data-val="1x1">
-        <span class="d-level">LV 1</span>
-        <span class="d-expr">個位 × 個位</span>
-        <span class="d-range">2~9 × 2~9</span>
-      </button>
-      <button class="diff-btn" data-group="diff" data-val="2x1">
-        <span class="d-level">LV 2</span>
-        <span class="d-expr">二位 × 個位</span>
-        <span class="d-range">11~99 × 2~9</span>
-      </button>
-      <button class="diff-btn" data-group="diff" data-val="3x1">
-        <span class="d-level">LV 3</span>
-        <span class="d-expr">三位 × 個位</span>
-        <span class="d-range">101~999 × 2~9</span>
-      </button>
-      <button class="diff-btn" data-group="diff" data-val="2x2">
-        <span class="d-level">LV 4</span>
-        <span class="d-expr">二位 × 二位</span>
-        <span class="d-range">11~99 × 11~99</span>
-      </button>
+    <div class="diff-grid" id="diff-grid">
+      <!-- 動態填入 -->
     </div>
   </div>
 
@@ -621,19 +618,86 @@ body {
 // ── 工具 ──
 function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-function genQuestion(diff) {
-  let a, b;
-  switch (diff) {
-    case '1x1': a = rand(2,9);   b = rand(2,9);   break;
-    case '2x1': a = rand(11,99); b = rand(2,9);   break;
-    case '3x1': a = rand(101,999); b = rand(2,9); break;
-    case '2x2': a = rand(11,99); b = rand(11,99); break;
+// 難度定義
+const DIFF_CONFIG = {
+  mult: [
+    { val:'1x1', level:'LV 1', expr:'個位 × 個位', range:'2~9 × 2~9' },
+    { val:'2x1', level:'LV 2', expr:'二位 × 個位', range:'11~99 × 2~9' },
+    { val:'3x1', level:'LV 3', expr:'三位 × 個位', range:'101~999 × 2~9' },
+    { val:'2x2', level:'LV 4', expr:'二位 × 二位', range:'11~99 × 11~99' },
+  ],
+  div: [
+    { val:'d2x1', level:'LV 1', expr:'二位 ÷ 個位', range:'被除數 10~99' },
+    { val:'d3x1', level:'LV 2', expr:'三位 ÷ 個位', range:'被除數 100~999' },
+    { val:'d3x2', level:'LV 3', expr:'三位 ÷ 二位', range:'被除數 100~999' },
+  ]
+};
+
+function renderDiffGrid(type) {
+  const grid = document.getElementById('diff-grid');
+  const defs = DIFF_CONFIG[type];
+  grid.innerHTML = defs.map((d, i) =>
+    `<button class="diff-btn${i===0?' selected':''}" data-group="diff" data-val="${d.val}">
+      <span class="d-level">${d.level}</span>
+      <span class="d-expr">${d.expr}</span>
+      <span class="d-range">${d.range}</span>
+    </button>`
+  ).join('');
+  // 重新綁定按鈕事件
+  grid.querySelectorAll('[data-group]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      grid.querySelectorAll('[data-group="diff"]').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.diff = btn.dataset.val;
+    });
+  });
+  // 預設選第一個
+  state.diff = defs[0].val;
+}
+
+function genQuestion(type, diff) {
+  let a, b, ans, expr;
+  if (type === 'mult') {
+    switch (diff) {
+      case '1x1': a = rand(2,9);    b = rand(2,9);    break;
+      case '2x1': a = rand(11,99);  b = rand(2,9);    break;
+      case '3x1': a = rand(101,999); b = rand(2,9);   break;
+      case '2x2': a = rand(11,99);  b = rand(11,99);  break;
+    }
+    ans = a * b;
+    expr = `${a} <span class="op">×</span> ${b}`;
+  } else {
+    // 除法：先決定除數，再決定商，相乘得被除數，保證整除
+    switch (diff) {
+      case 'd2x1': {
+        b = rand(2, 9);
+        // 商的範圍讓被除數落在 10~99
+        const qMin = Math.ceil(10 / b), qMax = Math.floor(99 / b);
+        const q = rand(qMin, qMax);
+        a = b * q; ans = q; break;
+      }
+      case 'd3x1': {
+        b = rand(2, 9);
+        const qMin = Math.ceil(100 / b), qMax = Math.floor(999 / b);
+        const q = rand(qMin, qMax);
+        a = b * q; ans = q; break;
+      }
+      case 'd3x2': {
+        b = rand(11, 99);
+        const qMin = Math.ceil(100 / b), qMax = Math.floor(999 / b);
+        if (qMin > qMax) { b = rand(11,32); const q2 = rand(4,9); a = b*q2; ans = q2; break; }
+        const q = rand(qMin, qMax);
+        a = b * q; ans = q; break;
+      }
+    }
+    expr = `${a} <span class="op">÷</span> ${b}`;
   }
-  return { a, b, ans: a * b };
+  return { a, b, ans, expr };
 }
 
 // ── 狀態 ──
 let state = {
+  type: 'mult',  // 'mult' | 'div'
   mode: 'ten',   // 'ten' | 'sprint'
   diff: '1x1',
   questions: [],
@@ -666,8 +730,17 @@ document.querySelectorAll('[data-group]').forEach(btn => {
     document.querySelectorAll(`[data-group="${g}"]`).forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     state[g] = btn.dataset.val;
+    // 切換遊戲類型時，動態更新難度選單和標題
+    if (g === 'type') {
+      const titles = { mult: '乘法<span>競速</span>', div: '除法<span>競速</span>' };
+      document.getElementById('menu-title').innerHTML = titles[btn.dataset.val];
+      renderDiffGrid(btn.dataset.val);
+    }
   });
 });
+
+// 初始化難度選單（乘法）
+renderDiffGrid('mult');
 
 // ── 開始遊戲 ──
 document.getElementById('start-btn').addEventListener('click', startGame);
@@ -688,7 +761,8 @@ function startGame() {
   state.running = true;
 
   const isSprint = state.mode === 'sprint';
-  document.getElementById('game-mode-label').textContent = isSprint ? '30 秒競速' : '十題競速';
+  const typeLabel = state.type === 'div' ? '除法' : '乘法';
+  document.getElementById('game-mode-label').textContent = `${typeLabel} · ${isSprint ? '30 秒競速' : '十題競速'}`;
   document.getElementById('progress-wrap').style.display = isSprint ? 'none' : 'block';
   document.getElementById('countdown-ring').style.display = isSprint ? 'block' : 'none';
 
@@ -701,7 +775,7 @@ function startGame() {
 
   if (!isSprint) {
     // 十題模式：生成10題，計時開始
-    state.questions = Array.from({length:10}, () => genQuestion(state.diff));
+    state.questions = Array.from({length:10}, () => genQuestion(state.type, state.diff));
     state.qi = 0;
     state.timerStart = performance.now();
     state.timer = setInterval(() => {
@@ -748,13 +822,12 @@ function showQuestion() {
     document.getElementById('q-num-label').textContent = `QUESTION ${state.qi + 1} / 10`;
     document.getElementById('progress-bar').style.width = `${(state.qi / 10) * 100}%`;
   } else {
-    q = genQuestion(state.diff);
+    q = genQuestion(state.type, state.diff);
     state.currentQ = q;
     document.getElementById('q-num-label').textContent = `第 ${state.log.length + 1} 題`;
   }
   state.currentQ = q;
-  document.getElementById('q-expr').innerHTML =
-    `${q.a} <span class="op">×</span> ${q.b}`;
+  document.getElementById('q-expr').innerHTML = q.expr;
   const input = document.getElementById('answer-input');
   input.value = '';
   input.className = 'answer-input';
@@ -776,7 +849,7 @@ function submitAnswer() {
   const q = state.currentQ;
   const ok = val === q.ans;
 
-  state.log.push({ expr: `${q.a} × ${q.b}`, userAns: val, correct: q.ans, ok });
+  state.log.push({ expr: q.expr.replace(/<[^>]+>/g,''), userAns: val, correct: q.ans, ok });
 
   if (ok) {
     state.correct++;
@@ -884,22 +957,26 @@ function endGame() {
   });
 
   // 存成績（先存再渲染，這樣本次成績也會出現在榜上）
-  saveScore({ mode: state.mode, diff: state.diff, time, correct, errors, total });
+  saveScore({ type: state.type, mode: state.mode, diff: state.diff, time, correct, errors, total });
 
   // 本模式最佳成績
-  renderResultBest(state.mode, state.diff, isSprint ? { correct } : { time });
+  renderResultBest(state.type, state.mode, state.diff, isSprint ? { correct } : { time });
 
   showScreen('result');
 }
 
-function renderResultBest(mode, diff, thisResult) {
+function renderResultBest(type, mode, diff, thisResult) {
   const scores = JSON.parse(localStorage.getItem(SCORES_KEY) || '{}');
-  const key = `${mode}_${diff}`;
+  const key = `${type}_${mode}_${diff}`;
   const rows = scores[key] || [];
   const isSprint = mode === 'sprint';
   const medals = ['🥇','🥈','🥉','4','5'];
-  const diffLabel = { '1x1':'個位×個位', '2x1':'二位×個位', '3x1':'三位×個位', '2x2':'二位×二位' };
+  const diffLabel = {
+    '1x1':'個位×個位','2x1':'二位×個位','3x1':'三位×個位','2x2':'二位×二位',
+    'd2x1':'二位÷個位','d3x1':'三位÷個位','d3x2':'三位÷二位'
+  };
   const modeLabel = { ten:'十題競速', sprint:'30秒競速' };
+  const typeLabel = { mult:'乘法', div:'除法' };
 
   // 找出本次成績在排行中的位置（0-based）
   const myRank = isSprint
@@ -908,7 +985,7 @@ function renderResultBest(mode, diff, thisResult) {
 
   let html = `
     <div class="scores-section" style="margin-bottom:0">
-      <h3>🏅 ${modeLabel[mode]} — ${diffLabel[diff]}</h3>
+      <h3>🏅 ${typeLabel[type]} ${modeLabel[mode]} — ${diffLabel[diff]}</h3>
       <table class="scores-table">
         <tr>
           <th>名次</th>
@@ -935,9 +1012,9 @@ function renderResultBest(mode, diff, thisResult) {
 // ── 成績記錄 ──
 const SCORES_KEY = 'multPWA_scores';
 
-function saveScore({ mode, diff, time, correct, errors, total }) {
+function saveScore({ type, mode, diff, time, correct, errors, total }) {
   const scores = JSON.parse(localStorage.getItem(SCORES_KEY) || '{}');
-  const key = `${mode}_${diff}`;
+  const key = `${type}_${mode}_${diff}`;
   if (!scores[key]) scores[key] = [];
 
   const date = new Date().toLocaleDateString('zh-TW');
@@ -960,8 +1037,12 @@ function renderScores() {
   container.innerHTML = '';
 
   const medals = ['🥇','🥈','🥉','4','5'];
-  const diffLabel = { '1x1':'個位×個位', '2x1':'二位×個位', '3x1':'三位×個位', '2x2':'二位×二位' };
+  const diffLabel = {
+    '1x1':'個位×個位','2x1':'二位×個位','3x1':'三位×個位','2x2':'二位×二位',
+    'd2x1':'二位÷個位','d3x1':'三位÷個位','d3x2':'三位÷二位'
+  };
   const modeLabel = { ten:'十題競速', sprint:'30秒競速' };
+  const typeLabel = { mult:'乘法', div:'除法' };
 
   const allKeys = Object.keys(scores).sort();
   if (allKeys.length === 0) {
@@ -972,11 +1053,15 @@ function renderScores() {
   allKeys.forEach(key => {
     const rows = scores[key];
     if (!rows || rows.length === 0) return;
-    const [mode, diff] = key.split('_');
+    const parts = key.split('_');
+    // key 格式: type_mode_diff（新）或 mode_diff（舊，相容）
+    let type, mode, diff;
+    if (parts.length === 3) { [type, mode, diff] = parts; }
+    else { type = 'mult'; [mode, diff] = parts; }
     const isSprint = mode === 'sprint';
     const section = document.createElement('div');
     section.className = 'scores-section';
-    section.innerHTML = `<h3>${modeLabel[mode] || mode} — ${diffLabel[diff] || diff}</h3>
+    section.innerHTML = `<h3>${typeLabel[type]||''} ${modeLabel[mode] || mode} — ${diffLabel[diff] || diff}</h3>
       <table class="scores-table">
         <tr>
           <th>名次</th>
