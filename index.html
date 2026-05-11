@@ -438,6 +438,12 @@ body {
 }
 #countdown-ring.warning #ring-fill { stroke: var(--red); }
 #countdown-ring.warning #countdown-num { color: var(--red); }
+
+/* ══════════════════════════════════
+   RACE MODE
+══════════════════════════════════ */
+#race-track-wrap { background: #0a1520; }
+#race-canvas { image-rendering: pixelated; }
 </style>
 </head>
 <body>
@@ -508,7 +514,141 @@ body {
   </div>
 
   <button class="start-btn" id="start-btn">開始挑戰</button>
+  <button class="score-link-btn" style="border-color:var(--accent2);color:var(--accent2)" onclick="showScreen('race-menu')">🏎️ 賽車模式</button>
   <button class="score-link-btn" onclick="showScreen('scores')">🏆 查看成績記錄</button>
+</div>
+
+<!-- RACE MENU -->
+<div class="screen" id="screen-race-menu">
+  <div class="top-bar">
+    <button class="back-btn" onclick="showScreen('menu')">◀ 返回</button>
+    <div id="race-version-tag"></div>
+  </div>
+  <div class="page-title">賽車<span>競速</span></div>
+
+  <div class="card">
+    <div class="card-title">遊戲類型</div>
+    <div class="mode-grid">
+      <button class="mode-btn selected" data-group="race-type" data-val="mult">
+        <span class="m-icon">×</span>
+        <span class="m-label">乘法</span>
+        <span class="m-sub">Multiplication</span>
+      </button>
+      <button class="mode-btn" data-group="race-type" data-val="div">
+        <span class="m-icon">÷</span>
+        <span class="m-label">除法</span>
+        <span class="m-sub">Division</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">難度</div>
+    <div class="diff-grid" id="race-diff-grid"><!-- 動態填入 --></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">賽道長度</div>
+    <div class="diff-grid">
+      <button class="diff-btn selected" data-group="race-track" data-val="5">
+        <span class="d-level">SHORT</span>
+        <span class="d-expr">短賽道</span>
+        <span class="d-range">5 題</span>
+      </button>
+      <button class="diff-btn" data-group="race-track" data-val="10">
+        <span class="d-level">MID</span>
+        <span class="d-expr">中賽道</span>
+        <span class="d-range">10 題</span>
+      </button>
+      <button class="diff-btn" data-group="race-track" data-val="20">
+        <span class="d-level">LONG</span>
+        <span class="d-expr">長賽道</span>
+        <span class="d-range">20 題</span>
+      </button>
+      <button class="diff-btn" data-group="race-track" data-val="50">
+        <span class="d-level">ENDURANCE</span>
+        <span class="d-expr">耐力賽</span>
+        <span class="d-range">50 題</span>
+      </button>
+    </div>
+  </div>
+
+  <button class="start-btn" id="race-start-btn">🏎️ 發車！</button>
+</div>
+
+<!-- RACE GAME -->
+<div class="screen" id="screen-race-game">
+  <div class="game-header">
+    <button class="back-btn" id="race-back-btn">◀ 放棄</button>
+    <div style="font-family:'Bebas Neue',cursive;font-size:1rem;letter-spacing:2px;color:var(--ink-dim)" id="race-mode-label"></div>
+    <div style="width:60px;text-align:right;font-family:'Bebas Neue',cursive;font-size:1.1rem;color:var(--gold)" id="race-q-counter">0/10</div>
+  </div>
+
+  <!-- 賽道畫布 -->
+  <div id="race-track-wrap" style="width:100%;margin-bottom:16px;overflow:hidden;border-radius:12px;border:1px solid var(--border)">
+    <canvas id="race-canvas" style="width:100%;display:block"></canvas>
+  </div>
+
+  <!-- 題目區 -->
+  <div class="question-area" style="margin-bottom:14px">
+    <div class="q-num-label" id="race-q-label">QUESTION 1</div>
+    <div class="q-expr" id="race-q-expr">— × —</div>
+    <div class="answer-row">
+      <input class="answer-input" type="number" id="race-answer-input"
+             inputmode="numeric" pattern="[0-9]*"
+             autocomplete="off" placeholder="？">
+      <button class="submit-btn" id="race-submit-btn">OK</button>
+    </div>
+    <div class="feedback-row" id="race-feedback"></div>
+  </div>
+
+  <!-- mini HUD -->
+  <div class="hud">
+    <div class="hud-cell hud-time">
+      <div class="hc-label">時間</div>
+      <div class="hc-val" id="race-time-val">0.0s</div>
+    </div>
+    <div class="hud-cell hud-score">
+      <div class="hc-label">答對</div>
+      <div class="hc-val" id="race-correct-val">0</div>
+    </div>
+    <div class="hud-cell hud-err">
+      <div class="hc-label">失誤</div>
+      <div class="hc-val" id="race-err-val">0</div>
+    </div>
+  </div>
+</div>
+
+<!-- RACE RESULT -->
+<div class="screen" id="screen-race-result">
+  <div class="game-header">
+    <div style="width:60px"></div>
+    <div style="font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:3px;color:var(--accent2)">🏁 終點</div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="result-hero">
+    <div class="result-grade" id="race-result-grade">1st</div>
+    <div class="result-tagline" id="race-result-tagline">新記錄！</div>
+    <div class="result-stats">
+      <div class="rs-cell">
+        <div class="rs-label">完賽時間</div>
+        <div class="rs-val" id="race-rs-time">--</div>
+      </div>
+      <div class="rs-cell">
+        <div class="rs-label">失誤</div>
+        <div class="rs-val" id="race-rs-errors">--</div>
+      </div>
+      <div class="rs-cell">
+        <div class="rs-label">排名</div>
+        <div class="rs-val" id="race-rs-rank">--</div>
+      </div>
+    </div>
+  </div>
+  <div id="race-result-best" style="width:100%;margin-bottom:14px"></div>
+  <div class="action-row">
+    <button class="btn-retry" id="race-retry-btn">再來一次</button>
+    <button class="btn-menu" onclick="showScreen('race-menu')">選單</button>
+  </div>
 </div>
 
 <!-- GAME -->
@@ -1124,6 +1264,475 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+
+// ══════════════════════════════════
+// RACE MODE
+// ══════════════════════════════════
+const RACE_SCORES_KEY = 'multPWA_raceScores';
+
+const LANE_COLORS = [
+  '#00d4ff',  // 0: Player (cyan)
+  '#ffd700',  // 1: Last run (gold)
+  '#ff4444',  // 2: #1 (red)
+  '#00e676',  // 3: #2 (green)
+  '#ff6b35',  // 4: #3 (orange)
+  '#a78bfa',  // 5: prev-prev (purple)
+];
+const LANE_LABELS = ['你', '上次', '第一', '第二', '第三', '上上次'];
+
+let raceState = {
+  type: 'mult',
+  diff: '1x1',
+  trackLen: 10,
+  qi: 0,
+  correct: 0,
+  errors: 0,
+  elapsed: 0,
+  timerStart: 0,
+  timer: null,
+  running: false,
+  // 6 lanes: positions (0..trackLen answered correctly)
+  positions: [0,0,0,0,0,0],
+  // ghost step intervals (seconds per step), null = not active
+  ghosts: [null,null,null,null,null,null], // index 0 = player (real)
+  ghostTimers: [],
+  // speed sampling for bot fallback
+  playerTimes: [],   // elapsed time at each correct answer (first 3)
+  currentQ: null,
+};
+
+// ── Race menu init ──
+document.querySelectorAll('[data-group="race-type"]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-group="race-type"]').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    raceState.type = btn.dataset.val;
+    renderRaceDiffGrid(raceState.type);
+  });
+});
+document.querySelectorAll('[data-group="race-track"]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-group="race-track"]').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    raceState.trackLen = parseInt(btn.dataset.val);
+  });
+});
+
+function renderRaceDiffGrid(type) {
+  const grid = document.getElementById('race-diff-grid');
+  const defs = DIFF_CONFIG[type];
+  grid.innerHTML = defs.map((d, i) =>
+    `<button class="diff-btn${i===0?' selected':''}" data-group="race-diff" data-val="${d.val}">
+      <span class="d-level">${d.level}</span>
+      <span class="d-expr">${d.expr}</span>
+      <span class="d-range">${d.range}</span>
+    </button>`
+  ).join('');
+  grid.querySelectorAll('[data-group="race-diff"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      grid.querySelectorAll('[data-group="race-diff"]').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      raceState.diff = btn.dataset.val;
+    });
+  });
+  raceState.diff = defs[0].val;
+}
+renderRaceDiffGrid('mult');
+
+document.getElementById('race-start-btn').addEventListener('click', startRace);
+document.getElementById('race-back-btn').addEventListener('click', () => {
+  stopRaceTimers();
+  showScreen('race-menu');
+});
+document.getElementById('race-retry-btn').addEventListener('click', startRace);
+document.getElementById('race-submit-btn').addEventListener('click', raceSubmit);
+document.getElementById('race-answer-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') raceSubmit();
+});
+
+// ── Load ghost speeds from scores ──
+function loadGhostSpeeds(type, diff, trackLen) {
+  const key = `${type}_${diff}_${trackLen}`;
+  const scores = JSON.parse(localStorage.getItem(RACE_SCORES_KEY) || '{}');
+  const runs = scores[key] || [];
+  // runs sorted best (lowest time) first
+  // ghosts[0] = player (live), [1]=last run, [2-4]=top3, [5]=prev-prev
+  const speeds = Array(6).fill(null);
+  // last run = runs[runs.length-1] (chronological last, stored separately)
+  const lastRun   = scores[key + '_last']   || null;
+  const prevRun   = scores[key + '_prevprev'] || null;
+  if (lastRun)  speeds[1] = lastRun.time / trackLen;   // sec per step
+  if (runs[0])  speeds[2] = runs[0].time / trackLen;
+  if (runs[1])  speeds[3] = runs[1].time / trackLen;
+  if (runs[2])  speeds[4] = runs[2].time / trackLen;
+  if (prevRun)  speeds[5] = prevRun.time / trackLen;
+  return speeds;
+}
+
+function stopRaceTimers() {
+  clearInterval(raceState.timer);
+  raceState.ghostTimers.forEach(t => clearInterval(t));
+  raceState.ghostTimers = [];
+  raceState.running = false;
+}
+
+// ── Start race ──
+function startRace() {
+  stopRaceTimers();
+
+  const tl = raceState.trackLen;
+  raceState.qi = 0;
+  raceState.correct = 0;
+  raceState.errors = 0;
+  raceState.elapsed = 0;
+  raceState.positions = Array(6).fill(0);
+  raceState.playerTimes = [];
+  raceState.running = true;
+
+  const typeLabel = raceState.type === 'div' ? '除法' : '乘法';
+  const trackLabel = {5:'短賽道',10:'中賽道',20:'長賽道',50:'耐力賽'}[tl] || tl+'題';
+  document.getElementById('race-mode-label').textContent = `${typeLabel} · ${trackLabel}`;
+  document.getElementById('race-q-counter').textContent = `0/${tl}`;
+
+  // Init canvas
+  initRaceCanvas(tl);
+
+  // Load ghost speeds
+  const ghostSpeeds = loadGhostSpeeds(raceState.type, raceState.diff, tl);
+  raceState.ghosts = ghostSpeeds;
+
+  // Start player timer
+  raceState.timerStart = performance.now();
+  raceState.timer = setInterval(() => {
+    raceState.elapsed = (performance.now() - raceState.timerStart) / 1000;
+    document.getElementById('race-time-val').textContent = raceState.elapsed.toFixed(1) + 's';
+    drawRace();
+  }, 100);
+
+  // Start ghost timers (only lanes with known speed)
+  raceState.ghostTimers = [];
+  for (let lane = 1; lane <= 5; lane++) {
+    const spd = raceState.ghosts[lane]; // sec/step
+    if (spd === null) continue;
+    let steps = 0;
+    const t = setInterval(() => {
+      if (!raceState.running) { clearInterval(t); return; }
+      steps++;
+      raceState.positions[lane] = Math.min(steps, tl);
+      if (steps >= tl) clearInterval(t);
+    }, spd * 1000);
+    raceState.ghostTimers.push(t);
+  }
+
+  // Bot fallback: lanes with no history start as null,
+  // after player answers 3, we compute fallback speeds
+  // (handled in raceSubmit)
+
+  showScreen('race-game');
+  raceNextQuestion();
+}
+
+// ── Canvas ──
+let raceCanvasData = { tl:10, laneH:0, w:0, totalH:0 };
+
+function initRaceCanvas(tl) {
+  const canvas = document.getElementById('race-canvas');
+  const wrap   = document.getElementById('race-track-wrap');
+  const w = wrap.clientWidth || 360;
+  const laneH = 44;
+  const totalH = 6 * laneH + 20; // 6 lanes + padding
+  canvas.width  = w;
+  canvas.height = totalH;
+  canvas.style.height = totalH + 'px';
+  raceCanvasData = { tl, laneH, w, totalH };
+}
+
+function drawRace() {
+  const canvas = document.getElementById('race-canvas');
+  const ctx    = canvas.getContext('2d');
+  const { tl, laneH, w, totalH } = raceCanvasData;
+
+  ctx.clearRect(0, 0, w, totalH);
+
+  // Background
+  ctx.fillStyle = '#0a1520';
+  ctx.fillRect(0, 0, w, totalH);
+
+  // Track area margins
+  const trackX = 52;  // left margin for labels
+  const trackW = w - trackX - 12;
+  const finishX = trackX + trackW;
+  const startX  = trackX;
+
+  // Finish line
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(finishX, 8); ctx.lineTo(finishX, totalH-8); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('FINISH', finishX - 2, 16);
+
+  // Start line
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(startX, 8); ctx.lineTo(startX, totalH-8); ctx.stroke();
+
+  for (let lane = 0; lane < 6; lane++) {
+    const y = 10 + lane * laneH;
+    const color = LANE_COLORS[lane];
+    const label = LANE_LABELS[lane];
+    const pos   = raceState.positions[lane]; // 0..tl
+    const hasData = lane === 0 || raceState.ghosts[lane] !== null;
+
+    // Lane strip
+    ctx.fillStyle = lane % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.15)';
+    ctx.fillRect(trackX, y, trackW, laneH - 2);
+
+    // Lane label
+    ctx.fillStyle = hasData ? color : 'rgba(100,130,160,0.4)';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(label, trackX - 4, y + laneH/2 + 4);
+
+    if (!hasData) {
+      // No ghost data — draw dashed empty lane
+      ctx.strokeStyle = 'rgba(100,130,160,0.15)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([6,6]);
+      ctx.beginPath();
+      ctx.moveTo(trackX, y + laneH/2);
+      ctx.lineTo(finishX, y + laneH/2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      continue;
+    }
+
+    // Progress trail
+    const carX = startX + (pos / tl) * trackW;
+    if (pos > 0) {
+      ctx.fillStyle = color + '22';
+      ctx.fillRect(startX, y + 8, carX - startX, laneH - 18);
+    }
+
+    // Dot markers for each step
+    for (let s = 1; s <= tl; s++) {
+      const sx = startX + (s / tl) * trackW;
+      ctx.fillStyle = s <= pos ? color + '55' : 'rgba(255,255,255,0.06)';
+      ctx.beginPath();
+      ctx.arc(sx, y + laneH/2, 3, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // Car body
+    const carY = y + laneH/2;
+    const lane0 = lane === 0;
+
+    // Glow
+    ctx.shadowColor = color;
+    ctx.shadowBlur  = lane0 ? 14 : 6;
+
+    // Body rect
+    ctx.fillStyle = color;
+    const bw = lane0 ? 24 : 18;
+    const bh = lane0 ? 12 : 9;
+    ctx.beginPath();
+    ctx.roundRect(carX - bw/2, carY - bh/2, bw, bh, 3);
+    ctx.fill();
+
+    // Cockpit
+    ctx.fillStyle = lane0 ? '#0a1520' : '#0a1520cc';
+    ctx.beginPath();
+    ctx.roundRect(carX - bw/4, carY - bh/2 + 2, bw/2, bh - 4, 2);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+
+    // Position number on car
+    if (pos > 0) {
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${lane0?9:8}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(pos, carX, carY + 3);
+    }
+  }
+}
+
+// ── Question ──
+function raceNextQuestion() {
+  const q = genQuestion(raceState.type, raceState.diff);
+  raceState.currentQ = q;
+  document.getElementById('race-q-label').textContent =
+    `QUESTION ${raceState.qi + 1} / ${raceState.trackLen}`;
+  document.getElementById('race-q-expr').innerHTML = q.expr;
+  const inp = document.getElementById('race-answer-input');
+  inp.value = '';
+  inp.className = 'answer-input';
+  document.getElementById('race-feedback').textContent = '';
+  document.getElementById('race-feedback').className = 'feedback-row';
+  inp.focus();
+}
+
+function raceSubmit() {
+  if (!raceState.running) return;
+  const inp = document.getElementById('race-answer-input');
+  const val = parseInt(inp.value, 10);
+  if (isNaN(val) || inp.value.trim() === '') return;
+
+  const q = raceState.currentQ;
+  const ok = val === q.ans;
+
+  if (ok) {
+    raceState.correct++;
+    raceState.positions[0] = raceState.correct;
+    inp.className = 'answer-input correct';
+    document.getElementById('race-feedback').textContent = '✓';
+    document.getElementById('race-feedback').className = 'feedback-row fb-correct';
+
+    // Record time for first 3 answers (bot fallback)
+    const elapsed = (performance.now() - raceState.timerStart) / 1000;
+    if (raceState.correct <= 3) {
+      raceState.playerTimes.push(elapsed);
+      // After 3 answers, activate bot fallback for lanes with no history
+      if (raceState.correct === 3) activateBotFallback(elapsed);
+    }
+
+    document.getElementById('race-q-counter').textContent =
+      `${raceState.correct}/${raceState.trackLen}`;
+    document.getElementById('race-correct-val').textContent = raceState.correct;
+
+    drawRace();
+
+    if (raceState.correct >= raceState.trackLen) {
+      setTimeout(endRace, 200);
+      return;
+    }
+  } else {
+    raceState.errors++;
+    inp.className = 'answer-input wrong';
+    document.getElementById('race-feedback').textContent = `✗ 正解：${q.ans}`;
+    document.getElementById('race-feedback').className = 'feedback-row fb-wrong';
+    document.getElementById('race-err-val').textContent = raceState.errors;
+  }
+
+  const delay = ok ? 280 : 800;
+  setTimeout(() => {
+    if (!raceState.running) return;
+    raceState.qi++;
+    raceNextQuestion();
+  }, delay);
+}
+
+function activateBotFallback(elapsed3) {
+  // avg sec/step from first 3 answers
+  const avgSec = elapsed3 / 3;
+  const minSec = avgSec * 0.85;
+  const maxSec = avgSec * 1.20;
+  const tl = raceState.trackLen;
+
+  for (let lane = 1; lane <= 5; lane++) {
+    if (raceState.ghosts[lane] !== null) continue; // already has real ghost
+    // assign random speed in [min, max]
+    const spd = minSec + Math.random() * (maxSec - minSec);
+    raceState.ghosts[lane] = spd;
+    // start from current position
+    const startPos = raceState.positions[lane];
+    let steps = startPos;
+    const t = setInterval(() => {
+      if (!raceState.running) { clearInterval(t); return; }
+      steps++;
+      raceState.positions[lane] = Math.min(steps, tl);
+      if (steps >= tl) clearInterval(t);
+    }, spd * 1000);
+    raceState.ghostTimers.push(t);
+  }
+}
+
+// ── End race ──
+function endRace() {
+  stopRaceTimers();
+  const time = parseFloat(raceState.elapsed.toFixed(2));
+  const { type, diff, trackLen, errors } = raceState;
+
+  // Save score
+  saveRaceScore({ type, diff, trackLen, time, errors });
+
+  // Compute rank vs saved scores
+  const key = `${type}_${diff}_${trackLen}`;
+  const scores = JSON.parse(localStorage.getItem(RACE_SCORES_KEY) || '{}');
+  const runs = scores[key] || [];
+  const rank = runs.findIndex(r => r.time === time) + 1 || runs.length;
+  const rankStr = rank === 1 ? '🥇 第一名' : rank === 2 ? '🥈 第二名' : rank === 3 ? '🥉 第三名' : `第 ${rank} 名`;
+
+  const grade = rank === 1 ? 'S' : rank === 2 ? 'A' : rank === 3 ? 'B' : 'C';
+  document.getElementById('race-result-grade').textContent = grade;
+  document.getElementById('race-result-grade').className   = 'result-grade grade-' + grade.toLowerCase();
+
+  const isNew = runs.length > 0 && runs[0].time === time;
+  document.getElementById('race-result-tagline').textContent = isNew ? '🎉 新紀錄！' : rankStr;
+  document.getElementById('race-rs-time').textContent   = time + 's';
+  document.getElementById('race-rs-errors').textContent = errors + '次';
+  document.getElementById('race-rs-rank').textContent   = rankStr;
+
+  // Best scores table
+  renderRaceResultBest(type, diff, trackLen, time);
+
+  showScreen('race-result');
+}
+
+function saveRaceScore({ type, diff, trackLen, time, errors }) {
+  const key = `${type}_${diff}_${trackLen}`;
+  const scores = JSON.parse(localStorage.getItem(RACE_SCORES_KEY) || '{}');
+  if (!scores[key]) scores[key] = [];
+
+  // Save prev-prev before updating last
+  const prevLast = scores[key + '_last'] || null;
+  if (prevLast) scores[key + '_prevprev'] = prevLast;
+
+  // Save this run as last
+  const date = new Date().toLocaleDateString('zh-TW');
+  scores[key + '_last'] = { time, errors, date };
+
+  // Update leaderboard
+  scores[key].push({ time, errors, date });
+  scores[key].sort((a, b) => a.time - b.time);
+  scores[key] = scores[key].slice(0, 5);
+
+  localStorage.setItem(RACE_SCORES_KEY, JSON.stringify(scores));
+}
+
+function renderRaceResultBest(type, diff, trackLen, myTime) {
+  const key = `${type}_${diff}_${trackLen}`;
+  const scores = JSON.parse(localStorage.getItem(RACE_SCORES_KEY) || '{}');
+  const runs = scores[key] || [];
+  const medals = ['🥇','🥈','🥉','4','5'];
+  const diffLabel = {
+    '1x1':'個位×個位','2x1':'二位×個位','3x1':'三位×個位','2x2':'二位×二位',
+    'd2x1':'二位÷個位','d3x1':'三位÷個位','d3x2':'三位÷二位'
+  };
+  const trackLabel = {5:'短賽道',10:'中賽道',20:'長賽道',50:'耐力賽'};
+  const typeLabel  = {mult:'乘法',div:'除法'};
+
+  let html = `<div class="scores-section" style="margin-bottom:0">
+    <h3>🏎️ ${typeLabel[type]} ${trackLabel[trackLen]} — ${diffLabel[diff]}</h3>
+    <table class="scores-table">
+      <tr><th>名次</th><th>時間</th><th>失誤</th><th>日期</th></tr>
+      ${runs.map((r,i) => {
+        const isMe = r.time === myTime;
+        return `<tr class="rank-${i+1}" style="${isMe?'background:rgba(0,212,255,0.08);outline:1px solid var(--accent);outline-offset:-1px':''}">
+          <td>${medals[i]||i+1}${isMe?' ◀':''}</td>
+          <td style="color:var(--gold);font-weight:700">${r.time}s</td>
+          <td>${r.errors}次</td>
+          <td style="font-size:.75rem;color:var(--ink-dim)">${r.date||''}</td>
+        </tr>`;
+      }).join('')}
+    </table></div>`;
+  document.getElementById('race-result-best').innerHTML = html;
+}
+
 </script>
 </body>
 </html>
