@@ -444,6 +444,48 @@ body {
 ══════════════════════════════════ */
 #race-track-wrap { background: #0a1520; }
 #race-canvas { image-rendering: pixelated; }
+
+/* ── NUMPAD ── */
+.numpad {
+  width:100%; display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:7px; padding:4px 0;
+}
+.np-btn {
+  padding:0; height:52px;
+  background:var(--bg3); border:1px solid var(--border-bright);
+  border-radius:10px; color:var(--ink);
+  font-family:'Bebas Neue',cursive; font-size:1.5rem;
+  cursor:pointer; transition:background 0.1s, transform 0.08s;
+  display:flex; align-items:center; justify-content:center;
+  user-select:none; -webkit-user-select:none;
+}
+.np-btn:active { background:var(--accent); color:var(--bg); transform:scale(0.93); }
+.np-btn.np-del { font-size:1.2rem; color:var(--ink-dim); }
+.np-btn.np-ok  {
+  background:var(--accent); color:var(--bg);
+  grid-column:span 2; font-size:1.4rem; letter-spacing:2px;
+}
+.np-btn.np-ok:active { background:#00b8d9; }
+/* 答案顯示欄（取代 input）*/
+.answer-display {
+  font-family:'Bebas Neue',cursive;
+  font-size:2.4rem; letter-spacing:4px;
+  min-width:140px; padding:10px 16px;
+  background:var(--bg); border:2px solid var(--border-bright);
+  border-radius:8px; color:var(--accent);
+  text-align:center; flex:1;
+  transition:border-color 0.15s, box-shadow 0.15s;
+  display:flex; align-items:center; justify-content:center;
+}
+.answer-display.correct {
+  border-color:var(--green); box-shadow:0 0 20px rgba(0,230,118,0.25);
+  animation:flash-correct 0.35s ease;
+}
+.answer-display.wrong {
+  border-color:var(--red); box-shadow:0 0 20px rgba(255,68,68,0.3);
+  animation:shake 0.45s ease;
+}
 </style>
 </head>
 <body>
@@ -471,6 +513,30 @@ body {
    onmouseout="this.style.background='rgba(167,139,250,0.12)'">
   📲 加入主畫面
 </button>
+
+<!-- 共用數字鍵盤 -->
+<div id="numpad-wrap" style="
+  display:none; position:fixed; bottom:0; left:0; right:0; z-index:800;
+  background:var(--bg2); border-top:1px solid var(--border);
+  padding:10px 12px 20px; max-width:480px; margin:0 auto;
+  box-shadow:0 -8px 30px rgba(0,0,0,0.4);
+">
+  <div class="numpad">
+    <button class="np-btn" data-np="1">1</button>
+    <button class="np-btn" data-np="2">2</button>
+    <button class="np-btn" data-np="3">3</button>
+    <button class="np-btn np-del" data-np="del">⌫</button>
+    <button class="np-btn" data-np="4">4</button>
+    <button class="np-btn" data-np="5">5</button>
+    <button class="np-btn" data-np="6">6</button>
+    <button class="np-btn" data-np="0">0</button>
+    <button class="np-btn" data-np="7">7</button>
+    <button class="np-btn" data-np="8">8</button>
+    <button class="np-btn" data-np="9">9</button>
+    <button class="np-btn" data-np="clear" style="font-size:0.9rem;color:var(--ink-dim)">CLR</button>
+    <button class="np-btn np-ok" data-np="ok">OK ✓</button>
+  </div>
+</div>
 
 <!-- 安裝提示框（iOS / 不支援平台） -->
 <div id="install-modal" style="
@@ -684,11 +750,8 @@ body {
   <div class="question-area" style="margin-bottom:14px">
     <div class="q-num-label" id="race-q-label">QUESTION 1</div>
     <div class="q-expr" id="race-q-expr">— × —</div>
-    <div class="answer-row">
-      <input class="answer-input" type="number" id="race-answer-input"
-             inputmode="numeric" pattern="[0-9]*"
-             autocomplete="off" placeholder="？">
-      <button class="submit-btn" id="race-submit-btn">OK</button>
+    <div class="answer-row" style="justify-content:center">
+      <div class="answer-display" id="race-answer-display">？</div>
     </div>
     <div class="feedback-row" id="race-feedback"></div>
   </div>
@@ -785,11 +848,8 @@ body {
   <div class="question-area">
     <div class="q-num-label" id="q-num-label">QUESTION 1 / 10</div>
     <div class="q-expr" id="q-expr">12 <span class="op">×</span> 7</div>
-    <div class="answer-row">
-      <input class="answer-input" type="number" id="answer-input"
-             inputmode="numeric" pattern="[0-9]*"
-             autocomplete="off" placeholder="？">
-      <button class="submit-btn" id="submit-btn">OK</button>
+    <div class="answer-row" style="justify-content:center">
+      <div class="answer-display" id="answer-display">？</div>
     </div>
     <div class="feedback-row" id="feedback-row"></div>
   </div>
@@ -846,6 +906,54 @@ body {
 </div>
 
 <script>
+// ── NUMPAD ──
+let _npTarget = null;   // 'main' | 'race'
+let _npValue  = '';
+
+function npShow(target) {
+  _npTarget = target;
+  _npValue  = '';
+  _updateDisplay();
+  document.getElementById('numpad-wrap').style.display = 'block';
+}
+function npHide() {
+  document.getElementById('numpad-wrap').style.display = 'none';
+}
+function _updateDisplay() {
+  const v = _npValue === '' ? '？' : _npValue;
+  const id = _npTarget === 'race' ? 'race-answer-display' : 'answer-display';
+  const el = document.getElementById(id);
+  if (el) { el.textContent = v; el.className = 'answer-display'; }
+}
+function _npSubmit() {
+  if (_npTarget === 'race') raceSubmit();
+  else submitAnswer();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[data-np]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const v = btn.dataset.np;
+      if (v === 'del')   { _npValue = _npValue.slice(0,-1); _updateDisplay(); }
+      else if (v === 'clear') { _npValue = ''; _updateDisplay(); }
+      else if (v === 'ok')    { _npSubmit(); }
+      else if (_npValue.length < 6) { _npValue += v; _updateDisplay(); }
+    });
+  });
+});
+
+// 實體鍵盤也支援
+document.addEventListener('keydown', (e) => {
+  if (!_npTarget) return;
+  if (e.key >= '0' && e.key <= '9' && _npValue.length < 6) {
+    _npValue += e.key; _updateDisplay();
+  } else if (e.key === 'Backspace') {
+    _npValue = _npValue.slice(0,-1); _updateDisplay();
+  } else if (e.key === 'Enter') {
+    _npSubmit();
+  }
+});
+
 // ── 工具 ──
 function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
@@ -948,6 +1056,8 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + id).classList.add('active');
   if (id === 'scores') renderScores();
+  // 離開遊戲畫面時收起鍵盤
+  if (id !== 'game' && id !== 'race-game') { npHide(); _npTarget = null; }
 }
 
 function splashStart() {
@@ -978,6 +1088,7 @@ document.getElementById('start-btn').addEventListener('click', startGame);
 document.getElementById('game-back-btn').addEventListener('click', () => {
   clearInterval(state.timer);
   state.running = false;
+  npHide();
   showScreen('menu');
 });
 document.getElementById('result-retry-btn').addEventListener('click', startGame);
@@ -1059,11 +1170,11 @@ function showQuestion() {
   }
   state.currentQ = q;
   document.getElementById('q-expr').innerHTML = q.expr;
-  const input = document.getElementById('answer-input');
-  input.value = '';
-  input.className = 'answer-input';
-  input.focus();
+  _npValue = '';
+  const disp = document.getElementById('answer-display');
+  if (disp) { disp.textContent = '？'; disp.className = 'answer-display'; }
   clearFeedback();
+  npShow('main');
 }
 
 function clearFeedback() {
@@ -1074,9 +1185,8 @@ function clearFeedback() {
 
 function submitAnswer() {
   if (!state.running) return;
-  const input = document.getElementById('answer-input');
-  const val = parseInt(input.value, 10);
-  if (isNaN(val) || input.value.trim() === '') return;
+  const val = parseInt(_npValue, 10);
+  if (isNaN(val) || _npValue.trim() === '') return;
   const q = state.currentQ;
   const ok = val === q.ans;
 
@@ -1084,11 +1194,13 @@ function submitAnswer() {
 
   if (ok) {
     state.correct++;
-    input.className = 'answer-input correct';
+    const disp = document.getElementById('answer-display');
+    if (disp) { disp.className = 'answer-display correct'; }
     showFeedback('✓  正確！', true);
   } else {
     state.errors++;
-    input.className = 'answer-input wrong';
+    const disp = document.getElementById('answer-display');
+    if (disp) { disp.className = 'answer-display wrong'; }
     showFeedback(`✗  正確答案是 ${q.ans}`, false);
   }
 
@@ -1125,15 +1237,13 @@ function setRing(current, total) {
 }
 
 // 送出按鈕 & Enter
-document.getElementById('submit-btn').addEventListener('click', submitAnswer);
-document.getElementById('answer-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') submitAnswer();
-});
+// submit via numpad OK or physical Enter (handled globally)
 
 // ── 結算 ──
 function endGame() {
   clearInterval(state.timer);
   state.running = false;
+  npHide();
 
   const isSprint = state.mode === 'sprint';
   const time = isSprint ? 30 : parseFloat(state.elapsed.toFixed(1));
@@ -1492,13 +1602,11 @@ renderRaceDiffGrid('mult');
 document.getElementById('race-start-btn').addEventListener('click', startRace);
 document.getElementById('race-back-btn').addEventListener('click', () => {
   stopRaceTimers();
+  npHide();
   showScreen('race-menu');
 });
 document.getElementById('race-retry-btn').addEventListener('click', startRace);
-document.getElementById('race-submit-btn').addEventListener('click', raceSubmit);
-document.getElementById('race-answer-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') raceSubmit();
-});
+// race submit via numpad OK or physical Enter (handled globally)
 
 // ── Load ghost speeds from scores ──
 function loadGhostSpeeds(type, diff, trackLen) {
@@ -1717,19 +1825,18 @@ function raceNextQuestion() {
   document.getElementById('race-q-label').textContent =
     `QUESTION ${raceState.qi + 1} / ${raceState.trackLen}`;
   document.getElementById('race-q-expr').innerHTML = q.expr;
-  const inp = document.getElementById('race-answer-input');
-  inp.value = '';
-  inp.className = 'answer-input';
+  _npValue = '';
+  const disp = document.getElementById('race-answer-display');
+  if (disp) { disp.textContent = '？'; disp.className = 'answer-display'; }
   document.getElementById('race-feedback').textContent = '';
   document.getElementById('race-feedback').className = 'feedback-row';
-  inp.focus();
+  npShow('race');
 }
 
 function raceSubmit() {
   if (!raceState.running) return;
-  const inp = document.getElementById('race-answer-input');
-  const val = parseInt(inp.value, 10);
-  if (isNaN(val) || inp.value.trim() === '') return;
+  const val = parseInt(_npValue, 10);
+  if (isNaN(val) || _npValue.trim() === '') return;
 
   const q = raceState.currentQ;
   const ok = val === q.ans;
@@ -1737,7 +1844,8 @@ function raceSubmit() {
   if (ok) {
     raceState.correct++;
     raceState.positions[0] = raceState.correct;
-    inp.className = 'answer-input correct';
+    const disp = document.getElementById('race-answer-display');
+    if (disp) disp.className = 'answer-display correct';
     document.getElementById('race-feedback').textContent = '✓';
     document.getElementById('race-feedback').className = 'feedback-row fb-correct';
 
@@ -1761,7 +1869,8 @@ function raceSubmit() {
     }
   } else {
     raceState.errors++;
-    inp.className = 'answer-input wrong';
+    const disp2 = document.getElementById('race-answer-display');
+    if (disp2) disp2.className = 'answer-display wrong';
     document.getElementById('race-feedback').textContent = `✗ 正解：${q.ans}`;
     document.getElementById('race-feedback').className = 'feedback-row fb-wrong';
     document.getElementById('race-err-val').textContent = raceState.errors;
@@ -1803,6 +1912,7 @@ function activateBotFallback(elapsed3) {
 // ── End race ──
 function endRace() {
   stopRaceTimers();
+  npHide();
   const time = parseFloat(raceState.elapsed.toFixed(2));
   const { type, diff, trackLen, errors } = raceState;
 
