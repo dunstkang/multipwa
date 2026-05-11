@@ -504,6 +504,17 @@ body {
         <span class="m-sub">限時30秒，拼最多答題</span>
       </button>
     </div>
+    <button onclick="showScreen('race-menu')" style="
+      margin-top:10px; width:100%; padding:14px;
+      background:transparent;
+      border:2px solid var(--accent2); border-radius:8px;
+      color:var(--accent2);
+      font-family:'Bebas Neue',cursive; font-size:1.3rem; letter-spacing:3px;
+      cursor:pointer; transition:background 0.15s, color 0.15s;
+    " onmouseover="this.style.background='rgba(255,107,53,0.12)'"
+       onmouseout="this.style.background='transparent'">
+      🏎️ 賽車模式
+    </button>
   </div>
 
   <div class="card">
@@ -514,7 +525,6 @@ body {
   </div>
 
   <button class="start-btn" id="start-btn">開始挑戰</button>
-  <button class="score-link-btn" style="border-color:var(--accent2);color:var(--accent2)" onclick="showScreen('race-menu')">🏎️ 賽車模式</button>
   <button class="score-link-btn" onclick="showScreen('scores')">🏆 查看成績記錄</button>
 </div>
 
