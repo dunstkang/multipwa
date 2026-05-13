@@ -499,7 +499,7 @@ body {
 
 <!-- 安裝按鈕（右上角懸浮） -->
 <button id="install-btn" onclick="installApp()" style="
-  display:none; position:fixed; top:14px; right:14px; z-index:998;
+  display:block; position:fixed; top:14px; right:14px; z-index:998;
   padding:8px 14px;
   background:rgba(167,139,250,0.12);
   border:1.5px solid #a78bfa;
@@ -587,6 +587,43 @@ body {
     </div>
 
     <!-- Firefox / 其他 -->
+    <!-- LINE WebView -->
+    <div id="modal-line" style="display:none">
+      <div style="background:#0f1923;border-radius:10px;padding:16px;margin-bottom:12px">
+        <div style="font-size:0.85rem;color:#e8f0f8;line-height:1.8">
+          <div style="margin-bottom:8px;font-weight:700;color:#a78bfa">LINE 內建瀏覽器</div>
+          <div>LINE 的瀏覽器無法直接安裝，請用外部瀏覽器開啟。</div>
+        </div>
+        <!-- Android：intent scheme 直接跳 Chrome -->
+        <button id="open-chrome-btn" onclick="openInChrome()" style="
+          margin-top:12px; width:100%; padding:13px;
+          background:#00d4ff; color:#0f1923;
+          border:none; border-radius:8px;
+          font-family:'Noto Sans TC',sans-serif;
+          font-weight:900; font-size:0.95rem;
+          cursor:pointer; letter-spacing:1px;
+        ">🌐 用外部瀏覽器開啟</button>
+        <!-- iOS LINE：只能複製網址 -->
+        <div id="line-ios-hint" style="display:none;margin-top:10px">
+          <div style="font-size:0.8rem;color:#6a88a8;margin-bottom:6px">iOS 請手動複製網址：</div>
+          <div style="
+            background:#0a1520; border:1px solid #2a4a6a;
+            border-radius:6px; padding:10px 12px;
+            font-size:0.78rem; color:#00d4ff;
+            word-break:break-all; letter-spacing:0.5px;
+          " id="copy-url-display"></div>
+          <button onclick="copyUrl()" style="
+            margin-top:8px; width:100%; padding:11px;
+            background:transparent; color:#a78bfa;
+            border:1.5px solid #a78bfa; border-radius:8px;
+            font-size:0.9rem; font-weight:700; cursor:pointer;
+          ">📋 複製網址</button>
+          <div id="copy-confirm" style="display:none;color:#00e676;font-size:0.8rem;text-align:center;margin-top:6px">✓ 已複製！請貼到 Chrome 或 Safari 開啟</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Firefox / 其他不支援 -->
     <div id="modal-other" style="display:none">
       <div style="background:#0f1923;border-radius:10px;padding:16px;margin-bottom:12px">
         <div style="font-size:0.85rem;color:#e8f0f8;line-height:1.8">
@@ -1440,23 +1477,24 @@ function exportScores() {
 let _installPrompt = null;
 
 // 偵測平台
-const _ua = navigator.userAgent;
-const _isIOS        = /iP(hone|ad|od)/.test(_ua) && !window.MSStream;
-const _isMacSafari  = /Macintosh/.test(_ua) && /Safari/.test(_ua) && !/Chrome/.test(_ua);
+const _ua          = navigator.userAgent;
+const _isIOS       = /iP(hone|ad|od)/.test(_ua) && !window.MSStream;
+const _isAndroid   = /Android/.test(_ua);
+const _isMacSafari = /Macintosh/.test(_ua) && /Safari/.test(_ua) && !/Chrome/.test(_ua);
+const _isLINE      = /Line\//.test(_ua);  // LINE WebView
 const _isStandalone = window.matchMedia('(display-mode: standalone)').matches
-                   || window.navigator.standalone === true;
+                    || window.navigator.standalone === true;
 
-function _showInstallBtn() {
-  if (_isStandalone) return; // 已是 App 模式，不顯示
+// 已是 App 模式就隱藏按鈕
+if (_isStandalone) {
   const btn = document.getElementById('install-btn');
-  if (btn) btn.style.display = 'block';
+  if (btn) btn.style.display = 'none';
 }
 
 // Chrome / Edge / Android：攔截原生安裝提示
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   _installPrompt = e;
-  _showInstallBtn();
 });
 
 window.addEventListener('appinstalled', () => {
@@ -1465,33 +1503,80 @@ window.addEventListener('appinstalled', () => {
   if (btn) btn.style.display = 'none';
 });
 
-// iOS / macOS Safari：沒有 beforeinstallprompt，直接顯示按鈕
-if ((_isIOS || _isMacSafari) && !_isStandalone) {
-  _showInstallBtn();
-}
-
 async function installApp() {
+  if (_isStandalone) return;
+
   if (_installPrompt) {
-    // ✅ 完整支援：直接觸發原生安裝
+    // ✅ Chrome / Edge：直接觸發原生安裝
     const result = await _installPrompt.prompt();
     if (result.outcome === 'accepted') {
       _installPrompt = null;
       const btn = document.getElementById('install-btn');
       if (btn) btn.style.display = 'none';
     }
+    return;
+  }
+
+  // 其他平台：顯示說明提示框
+  const modal = document.getElementById('install-modal');
+  modal.style.display = 'flex';
+
+  const isLine      = _isLINE;
+  const isIOS       = _isIOS;
+  const isMacSafari = _isMacSafari;
+
+  document.getElementById('modal-ios').style.display        = (isIOS && !isLine) ? 'block' : 'none';
+  document.getElementById('modal-mac-safari').style.display = isMacSafari ? 'block' : 'none';
+  document.getElementById('modal-line').style.display       = isLine ? 'block' : 'none';
+  document.getElementById('modal-other').style.display      = (!isIOS && !isMacSafari && !isLine) ? 'block' : 'none';
+
+  if (isLine) {
+    // 填入目前網址
+    const url = location.href;
+    const disp = document.getElementById('copy-url-display');
+    if (disp) disp.textContent = url;
+    // iOS LINE 無法用 intent，只能複製
+    const iosHint   = document.getElementById('line-ios-hint');
+    const chromeBtn = document.getElementById('open-chrome-btn');
+    if (_isIOS) {
+      if (iosHint)   iosHint.style.display   = 'block';
+      if (chromeBtn) chromeBtn.style.display = 'none';
+    } else {
+      // Android LINE：顯示「用外部瀏覽器開啟」按鈕
+      if (iosHint)   iosHint.style.display   = 'none';
+      if (chromeBtn) chromeBtn.style.display = 'block';
+    }
+  }
+}
+
+function openInChrome() {
+  // Android intent scheme：強制跳到 Chrome
+  const url = location.href;
+  const intent = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
+  location.href = intent;
+  // 若 Chrome 未安裝，備用：直接開網址（LINE 會在內建瀏覽器，但至少有提示）
+  setTimeout(() => { window.open(url, '_blank'); }, 1500);
+}
+
+function copyUrl() {
+  const url = location.href;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      document.getElementById('copy-confirm').style.display = 'block';
+    });
   } else {
-    // ❌ 不支援：顯示說明提示框
-    const modal = document.getElementById('install-modal');
-    modal.style.display = 'flex';
-    // 根據平台顯示對應說明
-    document.getElementById('modal-ios').style.display        = _isIOS ? 'block' : 'none';
-    document.getElementById('modal-mac-safari').style.display = _isMacSafari ? 'block' : 'none';
-    document.getElementById('modal-other').style.display      = (!_isIOS && !_isMacSafari) ? 'block' : 'none';
+    // 舊版 fallback
+    const ta = document.createElement('textarea');
+    ta.value = url; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    document.getElementById('copy-confirm').style.display = 'block';
   }
 }
 
 function closeInstallModal() {
   document.getElementById('install-modal').style.display = 'none';
+  document.getElementById('copy-confirm').style.display = 'none';
 }
 
 // ── Service Worker + 版本 ──
