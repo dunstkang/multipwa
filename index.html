@@ -124,6 +124,19 @@ body {
 .screen { display: none; width: 100%; max-width: 480px; }
 .screen.active { display: flex; flex-direction: column; align-items: center; }
 
+/* 賽車遊戲：固定滿版，不捲動 */
+#screen-race-game.active {
+  position: fixed; inset: 0;
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(0,212,255,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(255,107,53,0.06) 0%, transparent 60%);
+}
+
 /* ── TOP BAR ── */
 .top-bar {
   width: 100%; display: flex; justify-content: space-between;
@@ -774,41 +787,44 @@ body {
 
 <!-- RACE GAME -->
 <div class="screen" id="screen-race-game">
-  <div class="game-header">
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px 6px;flex-shrink:0">
     <button class="back-btn" id="race-back-btn">◀ 放棄</button>
-    <div style="font-family:'Bebas Neue',cursive;font-size:1rem;letter-spacing:2px;color:var(--ink-dim)" id="race-mode-label"></div>
-    <div style="width:60px;text-align:right;font-family:'Bebas Neue',cursive;font-size:1.1rem;color:var(--gold)" id="race-q-counter">0/10</div>
+    <div style="font-family:'Bebas Neue',cursive;font-size:0.95rem;letter-spacing:2px;color:var(--ink-dim)" id="race-mode-label"></div>
+    <div style="font-family:'Bebas Neue',cursive;font-size:1.1rem;color:var(--gold)" id="race-q-counter">0/10</div>
   </div>
 
-  <!-- 賽道畫布 -->
-  <div id="race-track-wrap" style="width:100%;margin-bottom:16px;overflow:hidden;border-radius:12px;border:1px solid var(--border)">
-    <canvas id="race-canvas" style="width:100%;display:block"></canvas>
+  <!-- 賽道畫布：flex-grow 吃剩餘空間 -->
+  <div id="race-track-wrap" style="flex:1;min-height:0;overflow:hidden;margin:0 10px 6px;border-radius:10px;border:1px solid var(--border)">
+    <canvas id="race-canvas" style="width:100%;height:100%;display:block"></canvas>
   </div>
 
-  <!-- 題目區 -->
-  <div class="question-area" style="margin-bottom:14px">
-    <div class="q-num-label" id="race-q-label">QUESTION 1</div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap">
-      <div class="q-expr" id="race-q-expr" style="margin-bottom:0">— × —</div>
-      <div style="font-family:'Bebas Neue',cursive;font-size:clamp(2.6rem,10vw,3.8rem);color:var(--ink-dim)">=</div>
-      <div class="answer-display" id="race-answer-display" style="min-width:120px;font-size:clamp(2.2rem,9vw,3.4rem)">？</div>
+  <!-- 題目 + mini HUD：固定高度 -->
+  <div style="flex-shrink:0;padding:0 10px 6px">
+    <!-- mini HUD -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
+      <div class="hud-cell hud-time" style="padding:6px">
+        <div class="hc-label">時間</div>
+        <div class="hc-val" id="race-time-val" style="font-size:1.3rem">0.0s</div>
+      </div>
+      <div class="hud-cell hud-score" style="padding:6px">
+        <div class="hc-label">答對</div>
+        <div class="hc-val" id="race-correct-val" style="font-size:1.3rem">0</div>
+      </div>
+      <div class="hud-cell hud-err" style="padding:6px">
+        <div class="hc-label">失誤</div>
+        <div class="hc-val" id="race-err-val" style="font-size:1.3rem">0</div>
+      </div>
     </div>
-    <div class="feedback-row" id="race-feedback" style="margin-top:10px"></div>
-  </div>
-
-  <!-- mini HUD -->
-  <div class="hud">
-    <div class="hud-cell hud-time">
-      <div class="hc-label">時間</div>
-      <div class="hc-val" id="race-time-val">0.0s</div>
-    </div>
-    <div class="hud-cell hud-score">
-      <div class="hc-label">答對</div>
-      <div class="hc-val" id="race-correct-val">0</div>
-    </div>
-    <div class="hud-cell hud-err">
-      <div class="hc-label">失誤</div>
-      <div class="hc-val" id="race-err-val">0</div>
+    <!-- 題目 -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 16px;text-align:center">
+      <div class="q-num-label" id="race-q-label" style="margin-bottom:4px">QUESTION 1</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px">
+        <div class="q-expr" id="race-q-expr" style="margin-bottom:0;font-size:clamp(1.8rem,8vw,2.8rem)">— × —</div>
+        <div style="font-family:'Bebas Neue',cursive;font-size:clamp(1.8rem,8vw,2.8rem);color:var(--ink-dim)">=</div>
+        <div class="answer-display" id="race-answer-display" style="min-width:90px;font-size:clamp(1.6rem,7vw,2.4rem);padding:6px 12px">？</div>
+      </div>
+      <div class="feedback-row" id="race-feedback" style="margin-top:4px;min-height:20px;font-size:0.8rem"></div>
     </div>
   </div>
 </div>
@@ -955,7 +971,9 @@ function npShow(target) {
   _npTarget = target;
   _npValue  = '';
   _updateDisplay();
-  document.getElementById('numpad-wrap').style.display = 'block';
+  const np = document.getElementById('numpad-wrap');
+  np.style.display = 'block';
+  // 賽車模式：賽道不被鍵盤蓋（鍵盤 fixed，內容不移動，無需 padding）
 }
 function npHide() {
   document.getElementById('numpad-wrap').style.display = 'none';
@@ -1741,8 +1759,12 @@ function startRace() {
   document.getElementById('race-mode-label').textContent = `${typeLabel} · ${trackLabel}`;
   document.getElementById('race-q-counter').textContent = `0/${tl}`;
 
-  // Init canvas
-  initRaceCanvas(tl);
+  // 先切換畫面，讓 wrap 有實際高度，再 init canvas
+  showScreen('race-game');
+  requestAnimationFrame(() => {
+    initRaceCanvas(tl);
+    drawRace();
+  });
 
   // Load ghost speeds
   const ghostSpeeds = loadGhostSpeeds(raceState.type, raceState.diff, tl);
@@ -1775,7 +1797,6 @@ function startRace() {
   // after player answers 3, we compute fallback speeds
   // (handled in raceSubmit)
 
-  showScreen('race-game');
   raceNextQuestion();
 }
 
@@ -1786,11 +1807,11 @@ function initRaceCanvas(tl) {
   const canvas = document.getElementById('race-canvas');
   const wrap   = document.getElementById('race-track-wrap');
   const w = wrap.clientWidth || 360;
-  const laneH = 44;
-  const totalH = 6 * laneH + 20; // 6 lanes + padding
+  const h = wrap.clientHeight || 240;
+  const laneH  = Math.floor((h - 16) / 6);
+  const totalH = laneH * 6 + 16;
   canvas.width  = w;
   canvas.height = totalH;
-  canvas.style.height = totalH + 'px';
   raceCanvasData = { tl, laneH, w, totalH };
 }
 
