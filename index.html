@@ -531,25 +531,74 @@ body {
 <!-- 共用數字鍵盤 -->
 <div id="numpad-wrap" style="
   display:none; position:fixed; bottom:0; left:50%; transform:translateX(-50%);
-  width:100%; max-width:480px; z-index:800;
+  width:100%; max-width:480px; z-index:900;
   background:var(--bg2); border-top:1px solid var(--border-bright);
-  padding:8px 10px 16px;
+  padding:8px 10px 12px;
   box-shadow:0 -6px 24px rgba(0,0,0,0.5);
 ">
-  <div class="numpad">
-    <button class="np-btn" data-np="1">1</button>
-    <button class="np-btn" data-np="2">2</button>
-    <button class="np-btn" data-np="3">3</button>
-    <button class="np-btn np-del" data-np="del">⌫</button>
-    <button class="np-btn" data-np="4">4</button>
-    <button class="np-btn" data-np="5">5</button>
-    <button class="np-btn" data-np="6">6</button>
-    <button class="np-btn" data-np="0">0</button>
-    <button class="np-btn" data-np="7">7</button>
-    <button class="np-btn" data-np="8">8</button>
-    <button class="np-btn" data-np="9">9</button>
-    <button class="np-btn" data-np="clear" style="font-size:0.9rem;color:var(--ink-dim)">CLR</button>
-    <button class="np-btn np-ok" data-np="ok">OK ✓</button>
+  <!-- 一般模式：4列鍵盤 -->
+  <div id="numpad-normal">
+    <div class="numpad">
+      <button class="np-btn" data-np="1">1</button>
+      <button class="np-btn" data-np="2">2</button>
+      <button class="np-btn" data-np="3">3</button>
+      <button class="np-btn np-del" data-np="del">⌫</button>
+      <button class="np-btn" data-np="4">4</button>
+      <button class="np-btn" data-np="5">5</button>
+      <button class="np-btn" data-np="6">6</button>
+      <button class="np-btn" data-np="0">0</button>
+      <button class="np-btn" data-np="7">7</button>
+      <button class="np-btn" data-np="8">8</button>
+      <button class="np-btn" data-np="9">9</button>
+      <button class="np-btn" data-np="clear" style="font-size:0.9rem;color:var(--ink-dim)">CLR</button>
+      <button class="np-btn np-ok" data-np="ok">OK ✓</button>
+    </div>
+  </div>
+
+  <!-- 賽車模式：左邊題目 + 右邊小鍵盤，並排 -->
+  <div id="numpad-race" style="display:none;flex-direction:row;gap:8px;align-items:stretch">
+    <!-- 左：HUD + 題目 -->
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;
+                background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:8px 12px;gap:3px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+        <div>
+          <div style="font-size:0.55rem;letter-spacing:1px;color:var(--ink-dim)">時間</div>
+          <div id="race-time-val" style="font-family:'Bebas Neue',cursive;font-size:1.1rem;color:var(--gold);line-height:1">0.0s</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:0.55rem;letter-spacing:1px;color:var(--ink-dim)">答對</div>
+          <div id="race-correct-val" style="font-family:'Bebas Neue',cursive;font-size:1.1rem;color:var(--green);line-height:1">0</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:0.55rem;letter-spacing:1px;color:var(--ink-dim)">失誤</div>
+          <div id="race-err-val" style="font-family:'Bebas Neue',cursive;font-size:1.1rem;color:var(--red);line-height:1">0</div>
+        </div>
+      </div>
+      <div id="race-q-label" style="font-size:0.55rem;letter-spacing:2px;color:var(--ink-dim);text-align:center">QUESTION 1</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap">
+        <div id="race-q-expr" style="font-family:'Bebas Neue',cursive;font-size:clamp(1.4rem,5vw,2rem);color:var(--ink);letter-spacing:2px">— × —</div>
+        <div style="font-family:'Bebas Neue',cursive;font-size:1.4rem;color:var(--ink-dim)">=</div>
+        <div id="race-answer-display" class="answer-display" style="min-width:60px;font-size:1.4rem;padding:4px 10px">？</div>
+      </div>
+      <div id="race-feedback" class="feedback-row" style="min-height:14px;font-size:0.7rem;text-align:center;margin-top:1px"></div>
+    </div>
+
+    <!-- 右：3×3 + ⌫ + 0 + CLR + OK -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;width:168px;flex-shrink:0;align-content:start">
+      <button class="np-btn" data-np="1" style="height:40px;font-size:1.3rem">1</button>
+      <button class="np-btn" data-np="2" style="height:40px;font-size:1.3rem">2</button>
+      <button class="np-btn" data-np="3" style="height:40px;font-size:1.3rem">3</button>
+      <button class="np-btn" data-np="4" style="height:40px;font-size:1.3rem">4</button>
+      <button class="np-btn" data-np="5" style="height:40px;font-size:1.3rem">5</button>
+      <button class="np-btn" data-np="6" style="height:40px;font-size:1.3rem">6</button>
+      <button class="np-btn" data-np="7" style="height:40px;font-size:1.3rem">7</button>
+      <button class="np-btn" data-np="8" style="height:40px;font-size:1.3rem">8</button>
+      <button class="np-btn" data-np="9" style="height:40px;font-size:1.3rem">9</button>
+      <button class="np-btn np-del" data-np="del" style="height:40px;font-size:1rem">⌫</button>
+      <button class="np-btn" data-np="0" style="height:40px;font-size:1.3rem">0</button>
+      <button class="np-btn" data-np="clear" style="height:40px;font-size:0.75rem;color:var(--ink-dim)">CLR</button>
+      <button class="np-btn np-ok" data-np="ok" style="grid-column:span 3;height:40px;font-size:1.1rem;letter-spacing:2px">OK ✓</button>
+    </div>
   </div>
 </div>
 
@@ -798,40 +847,6 @@ body {
   <div id="race-track-wrap" style="flex:1;min-height:0;overflow:hidden;margin:0 10px 10px;border-radius:10px;border:1px solid var(--border);position:relative">
     <canvas id="race-canvas" style="width:100%;height:100%;display:block"></canvas>
 
-    <!-- 題目 overlay：疊在賽道最下方 -->
-    <div id="race-question-overlay" style="
-      position:absolute;bottom:0;left:0;right:0;
-      background:rgba(15,25,35,0.92);
-      backdrop-filter:blur(6px);
-      border-top:1px solid var(--border-bright);
-      padding:8px 14px 10px;
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-    ">
-      <!-- 左：HUD -->
-      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;min-width:52px">
-        <div style="font-size:0.6rem;letter-spacing:1px;color:var(--ink-dim);text-transform:uppercase">時間</div>
-        <div id="race-time-val" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;color:var(--gold);line-height:1">0.0s</div>
-        <div style="font-size:0.6rem;letter-spacing:1px;color:var(--ink-dim);text-transform:uppercase;margin-top:2px">失誤</div>
-        <div id="race-err-val" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;color:var(--red);line-height:1">0</div>
-      </div>
-
-      <!-- 中：題目 -->
-      <div style="flex:1;text-align:center">
-        <div class="q-num-label" id="race-q-label" style="margin-bottom:2px;font-size:0.6rem">QUESTION 1</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:8px">
-          <div class="q-expr" id="race-q-expr" style="margin-bottom:0;font-size:clamp(1.6rem,7vw,2.4rem)">— × —</div>
-          <div style="font-family:'Bebas Neue',cursive;font-size:clamp(1.6rem,7vw,2.4rem);color:var(--ink-dim)">=</div>
-          <div class="answer-display" id="race-answer-display" style="min-width:72px;font-size:clamp(1.4rem,6vw,2rem);padding:5px 10px">？</div>
-        </div>
-        <div class="feedback-row" id="race-feedback" style="margin-top:2px;min-height:16px;font-size:0.75rem"></div>
-      </div>
-
-      <!-- 右：答對數 -->
-      <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;min-width:40px">
-        <div style="font-size:0.6rem;letter-spacing:1px;color:var(--ink-dim);text-transform:uppercase">答對</div>
-        <div id="race-correct-val" style="font-family:'Bebas Neue',cursive;font-size:1.6rem;color:var(--green);line-height:1">0</div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -977,15 +992,24 @@ function npShow(target) {
   _npTarget = target;
   _npValue  = '';
   _updateDisplay();
-  const np = document.getElementById('numpad-wrap');
+  const np     = document.getElementById('numpad-wrap');
+  const normal = document.getElementById('numpad-normal');
+  const race   = document.getElementById('numpad-race');
   np.style.display = 'block';
-  // 賽車模式：賽道不被鍵盤蓋（鍵盤 fixed，內容不移動，無需 padding）
+  if (target === 'race') {
+    normal.style.display = 'none';
+    race.style.display   = 'flex';
+  } else {
+    normal.style.display = 'block';
+    race.style.display   = 'none';
+  }
 }
 function npHide() {
   document.getElementById('numpad-wrap').style.display = 'none';
 }
 function _updateDisplay() {
   const v = _npValue === '' ? '？' : _npValue;
+  // race: answer-display 現在在 numpad 裡，同一個 id
   const id = _npTarget === 'race' ? 'race-answer-display' : 'answer-display';
   const el = document.getElementById(id);
   if (el) { el.textContent = v; el.className = 'answer-display'; }
@@ -1814,11 +1838,8 @@ function initRaceCanvas(tl) {
   const wrap   = document.getElementById('race-track-wrap');
   const w = wrap.clientWidth  || 360;
   const h = wrap.clientHeight || 300;
-  // 扣掉底部 overlay 高度（約90px），剩餘空間畫6條賽道
-  const overlayH = document.getElementById('race-question-overlay')?.offsetHeight || 90;
-  const trackH = h - overlayH;
-  const laneH  = Math.max(Math.floor(trackH / 6), 28);
-  const totalH = h; // canvas 撐滿整個 wrap，overlay 疊在上面
+  const laneH  = Math.max(Math.floor((h - 16) / 6), 28);
+  const totalH = laneH * 6 + 16;
   canvas.width  = w;
   canvas.height = totalH;
   raceCanvasData = { tl, laneH, w, totalH };
@@ -1949,6 +1970,11 @@ function raceNextQuestion() {
   if (disp) { disp.textContent = '？'; disp.className = 'answer-display'; }
   document.getElementById('race-feedback').textContent = '';
   document.getElementById('race-feedback').className = 'feedback-row';
+  // 更新 numpad 題目列
+  const qExpr = document.getElementById('race-q-expr');
+  const qLbl  = document.getElementById('race-q-label');
+  if (qExpr && raceState.currentQ) qExpr.innerHTML = raceState.currentQ.expr;
+  if (qLbl) qLbl.textContent = `QUESTION ${raceState.qi + 1} / ${raceState.trackLen}`;
   npShow('race');
 }
 
@@ -1965,6 +1991,7 @@ function raceSubmit() {
     raceState.positions[0] = raceState.correct;
     const disp = document.getElementById('race-answer-display');
     if (disp) disp.className = 'answer-display correct';
+    document.getElementById('race-correct-val').textContent = raceState.correct;
     document.getElementById('race-feedback').textContent = '✓';
     document.getElementById('race-feedback').className = 'feedback-row fb-correct';
 
@@ -1978,7 +2005,6 @@ function raceSubmit() {
 
     document.getElementById('race-q-counter').textContent =
       `${raceState.correct}/${raceState.trackLen}`;
-    document.getElementById('race-correct-val').textContent = raceState.correct;
 
     drawRace();
 
