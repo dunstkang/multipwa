@@ -788,43 +788,49 @@ body {
 <!-- RACE GAME -->
 <div class="screen" id="screen-race-game">
   <!-- Header -->
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px 6px;flex-shrink:0">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px 6px;flex-shrink:0;position:relative;z-index:2">
     <button class="back-btn" id="race-back-btn">◀ 放棄</button>
     <div style="font-family:'Bebas Neue',cursive;font-size:0.95rem;letter-spacing:2px;color:var(--ink-dim)" id="race-mode-label"></div>
     <div style="font-family:'Bebas Neue',cursive;font-size:1.1rem;color:var(--gold)" id="race-q-counter">0/10</div>
   </div>
 
-  <!-- 賽道畫布：flex-grow 吃剩餘空間 -->
-  <div id="race-track-wrap" style="flex:1;min-height:0;overflow:hidden;margin:0 10px 6px;border-radius:10px;border:1px solid var(--border)">
+  <!-- 賽道：佔滿所有剩餘空間 -->
+  <div id="race-track-wrap" style="flex:1;min-height:0;overflow:hidden;margin:0 10px 10px;border-radius:10px;border:1px solid var(--border);position:relative">
     <canvas id="race-canvas" style="width:100%;height:100%;display:block"></canvas>
-  </div>
 
-  <!-- 題目 + mini HUD：固定高度 -->
-  <div style="flex-shrink:0;padding:0 10px 6px">
-    <!-- mini HUD -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
-      <div class="hud-cell hud-time" style="padding:6px">
-        <div class="hc-label">時間</div>
-        <div class="hc-val" id="race-time-val" style="font-size:1.3rem">0.0s</div>
+    <!-- 題目 overlay：疊在賽道最下方 -->
+    <div id="race-question-overlay" style="
+      position:absolute;bottom:0;left:0;right:0;
+      background:rgba(15,25,35,0.92);
+      backdrop-filter:blur(6px);
+      border-top:1px solid var(--border-bright);
+      padding:8px 14px 10px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+    ">
+      <!-- 左：HUD -->
+      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;min-width:52px">
+        <div style="font-size:0.6rem;letter-spacing:1px;color:var(--ink-dim);text-transform:uppercase">時間</div>
+        <div id="race-time-val" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;color:var(--gold);line-height:1">0.0s</div>
+        <div style="font-size:0.6rem;letter-spacing:1px;color:var(--ink-dim);text-transform:uppercase;margin-top:2px">失誤</div>
+        <div id="race-err-val" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;color:var(--red);line-height:1">0</div>
       </div>
-      <div class="hud-cell hud-score" style="padding:6px">
-        <div class="hc-label">答對</div>
-        <div class="hc-val" id="race-correct-val" style="font-size:1.3rem">0</div>
+
+      <!-- 中：題目 -->
+      <div style="flex:1;text-align:center">
+        <div class="q-num-label" id="race-q-label" style="margin-bottom:2px;font-size:0.6rem">QUESTION 1</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px">
+          <div class="q-expr" id="race-q-expr" style="margin-bottom:0;font-size:clamp(1.6rem,7vw,2.4rem)">— × —</div>
+          <div style="font-family:'Bebas Neue',cursive;font-size:clamp(1.6rem,7vw,2.4rem);color:var(--ink-dim)">=</div>
+          <div class="answer-display" id="race-answer-display" style="min-width:72px;font-size:clamp(1.4rem,6vw,2rem);padding:5px 10px">？</div>
+        </div>
+        <div class="feedback-row" id="race-feedback" style="margin-top:2px;min-height:16px;font-size:0.75rem"></div>
       </div>
-      <div class="hud-cell hud-err" style="padding:6px">
-        <div class="hc-label">失誤</div>
-        <div class="hc-val" id="race-err-val" style="font-size:1.3rem">0</div>
+
+      <!-- 右：答對數 -->
+      <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;min-width:40px">
+        <div style="font-size:0.6rem;letter-spacing:1px;color:var(--ink-dim);text-transform:uppercase">答對</div>
+        <div id="race-correct-val" style="font-family:'Bebas Neue',cursive;font-size:1.6rem;color:var(--green);line-height:1">0</div>
       </div>
-    </div>
-    <!-- 題目 -->
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 16px;text-align:center">
-      <div class="q-num-label" id="race-q-label" style="margin-bottom:4px">QUESTION 1</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:12px">
-        <div class="q-expr" id="race-q-expr" style="margin-bottom:0;font-size:clamp(1.8rem,8vw,2.8rem)">— × —</div>
-        <div style="font-family:'Bebas Neue',cursive;font-size:clamp(1.8rem,8vw,2.8rem);color:var(--ink-dim)">=</div>
-        <div class="answer-display" id="race-answer-display" style="min-width:90px;font-size:clamp(1.6rem,7vw,2.4rem);padding:6px 12px">？</div>
-      </div>
-      <div class="feedback-row" id="race-feedback" style="margin-top:4px;min-height:20px;font-size:0.8rem"></div>
     </div>
   </div>
 </div>
@@ -1806,10 +1812,13 @@ let raceCanvasData = { tl:10, laneH:0, w:0, totalH:0 };
 function initRaceCanvas(tl) {
   const canvas = document.getElementById('race-canvas');
   const wrap   = document.getElementById('race-track-wrap');
-  const w = wrap.clientWidth || 360;
-  const h = wrap.clientHeight || 240;
-  const laneH  = Math.floor((h - 16) / 6);
-  const totalH = laneH * 6 + 16;
+  const w = wrap.clientWidth  || 360;
+  const h = wrap.clientHeight || 300;
+  // 扣掉底部 overlay 高度（約90px），剩餘空間畫6條賽道
+  const overlayH = document.getElementById('race-question-overlay')?.offsetHeight || 90;
+  const trackH = h - overlayH;
+  const laneH  = Math.max(Math.floor(trackH / 6), 28);
+  const totalH = h; // canvas 撐滿整個 wrap，overlay 疊在上面
   canvas.width  = w;
   canvas.height = totalH;
   raceCanvasData = { tl, laneH, w, totalH };
