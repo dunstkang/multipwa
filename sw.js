@@ -1,4 +1,4 @@
-const VERSION    = '2026.05.11-v2.3';       // ← 每次只改這一行
+const VERSION    = '2026.05.13-v2.4';       // ← 每次只改這一行
 const CACHE_NAME = `mult-pwa-${VERSION}`;
 
 self.addEventListener('message', (e) => {

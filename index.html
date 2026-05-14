@@ -1834,14 +1834,27 @@ function startRace() {
 let raceCanvasData = { tl:10, laneH:0, w:0, totalH:0 };
 
 function initRaceCanvas(tl) {
-  const canvas = document.getElementById('race-canvas');
-  const wrap   = document.getElementById('race-track-wrap');
-  const w = wrap.clientWidth  || 360;
-  const h = wrap.clientHeight || 300;
-  const laneH  = Math.max(Math.floor((h - 16) / 6), 28);
-  const totalH = laneH * 6 + 16;
+  const canvas  = document.getElementById('race-canvas');
+  const wrap    = document.getElementById('race-track-wrap');
+  const numpad  = document.getElementById('numpad-wrap');
+  const header  = document.querySelector('#screen-race-game > div:first-child');
+
+  // 可用高度 = 視窗高度 - header - numpad - 上下 margin(20px)
+  const npH     = numpad  ? numpad.offsetHeight  : 220;
+  const hdH     = header  ? header.offsetHeight  : 50;
+  const availH  = window.innerHeight - hdH - npH - 20;
+
+  // 每條賽道高度：平均分配，最小 30px，最大 80px
+  const laneH   = Math.min(80, Math.max(30, Math.floor(availH / 6)));
+  const totalH  = laneH * 6 + 8;
+  const w       = wrap.clientWidth || 360;
+
   canvas.width  = w;
   canvas.height = totalH;
+  // 讓 wrap 剛好等於 canvas 高度（不再 flex:1 撐滿）
+  wrap.style.height = totalH + 'px';
+  wrap.style.flex   = 'none';
+
   raceCanvasData = { tl, laneH, w, totalH };
 }
 
