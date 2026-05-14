@@ -1462,36 +1462,36 @@ function saveScore({ type, mode, diff, time, correct, errors, total }) {
 }
 
 function renderScores() {
-  const scores = JSON.parse(localStorage.getItem(SCORES_KEY) || '{}');
-  const container = document.getElementById('scores-content');
+  const scores     = JSON.parse(localStorage.getItem(SCORES_KEY)      || '{}');
+  const raceScores = JSON.parse(localStorage.getItem(RACE_SCORES_KEY) || '{}');
+  const container  = document.getElementById('scores-content');
   container.innerHTML = '';
 
-  const medals = ['🥇','🥈','🥉','4','5'];
+  const medals    = ['🥇','🥈','🥉','4','5'];
   const diffLabel = {
     '1x1':'個位×個位','2x1':'二位×個位','3x1':'三位×個位','2x2':'二位×二位',
     'd2x1':'二位÷個位','d3x1':'三位÷個位','d3x2':'三位÷二位'
   };
-  const modeLabel = { ten:'十題競速', sprint:'30秒競速' };
-  const typeLabel = { mult:'乘法', div:'除法' };
+  const modeLabel  = { ten:'十題競速', sprint:'30秒競速' };
+  const typeLabel  = { mult:'乘法', div:'除法' };
+  const trackLabel = { '5':'短賽道', '10':'中賽道', '20':'長賽道', '50':'耐力賽' };
 
+  let hasAny = false;
+
+  // ── 乘除法成績 ──
   const allKeys = Object.keys(scores).sort();
-  if (allKeys.length === 0) {
-    container.innerHTML = '<p style="color:var(--ink-dim);text-align:center;padding:24px;font-size:0.9rem">還沒有成績記錄，快去挑戰！</p>';
-    return;
-  }
-
   allKeys.forEach(key => {
     const rows = scores[key];
     if (!rows || rows.length === 0) return;
+    hasAny = true;
     const parts = key.split('_');
-    // key 格式: type_mode_diff（新）或 mode_diff（舊，相容）
     let type, mode, diff;
     if (parts.length === 3) { [type, mode, diff] = parts; }
     else { type = 'mult'; [mode, diff] = parts; }
     const isSprint = mode === 'sprint';
     const section = document.createElement('div');
     section.className = 'scores-section';
-    section.innerHTML = `<h3>${typeLabel[type]||''} ${modeLabel[mode] || mode} — ${diffLabel[diff] || diff}</h3>
+    section.innerHTML = `<h3>${typeLabel[type]||''} ${modeLabel[mode]||mode} — ${diffLabel[diff]||diff}</h3>
       <table class="scores-table">
         <tr>
           <th>名次</th>
@@ -1510,11 +1510,47 @@ function renderScores() {
       </table>`;
     container.appendChild(section);
   });
+
+  // ── 賽車成績 ──
+  // raceScores key 有三種：type_diff_track（排行）、type_diff_track_last、type_diff_track_prevprev
+  const raceKeys = Object.keys(raceScores)
+    .filter(k => !k.endsWith('_last') && !k.endsWith('_prevprev'))
+    .sort();
+
+  raceKeys.forEach(key => {
+    const rows = raceScores[key];
+    if (!rows || rows.length === 0) return;
+    hasAny = true;
+    const parts = key.split('_'); // type_diff_track
+    const [rType, rDiff, rTrack] = parts;
+    const section = document.createElement('div');
+    section.className = 'scores-section';
+    section.innerHTML = `<h3>🏎️ ${typeLabel[rType]||rType} 賽車 ${trackLabel[rTrack]||rTrack+'題'} — ${diffLabel[rDiff]||rDiff}</h3>
+      <table class="scores-table">
+        <tr><th>名次</th><th>時間</th><th>失誤</th><th>日期</th></tr>
+        ${rows.map((r,i) => `
+          <tr class="rank-${i+1}">
+            <td>${medals[i]||i+1}</td>
+            <td style="color:var(--gold);font-weight:700">${r.time}s</td>
+            <td>${r.errors}次</td>
+            <td style="font-size:.75rem;color:var(--ink-dim)">${r.date||''}</td>
+          </tr>`).join('')}
+      </table>`;
+    container.appendChild(section);
+  });
+
+  if (!hasAny) {
+    container.innerHTML = '<p style="color:var(--ink-dim);text-align:center;padding:24px;font-size:0.9rem">還沒有成績記錄，快去挑戰！</p>';
+  }
 }
 
 function exportScores() {
-  const data = localStorage.getItem(SCORES_KEY) || '{}';
-  const blob = new Blob([data], { type: 'application/json' });
+  // 合併兩個 localStorage 一起匯出
+  const data = {
+    mult_div: JSON.parse(localStorage.getItem(SCORES_KEY)      || '{}'),
+    race:     JSON.parse(localStorage.getItem(RACE_SCORES_KEY) || '{}'),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'mult-scores.json';
